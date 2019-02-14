@@ -1,0 +1,18 @@
+[package]
+name = "piano_keyboard"
+version = "0.1.0"
+authors = ["Jochen Kiemes <jochen@kiemes.de>"]
+edition = "2018"
+license = "MIT"
+description = "Provides graphical representation of a piano keyboard"
+homepage = "https://github.com/gin66/piano_keyboard"
+repository = "https://github.com/gin66/piano_keyboard"
+keywords = ["music", "piano", "graphics"]
+readme = "README.md"
+documentation = "https://docs.rs/releases/search?query=piano_keyboard"
+
+[dependencies]
+
+
+[dev-dependencies]
+png = "0.14.0"
