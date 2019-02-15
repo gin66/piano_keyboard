@@ -285,7 +285,7 @@ impl KeyboardBuilder {
             left_white_key: self.left_white_key,
             right_white_key: self.right_white_key,
             width: self.width,
-            height: 100,
+            height,
             elements
         }
     }
