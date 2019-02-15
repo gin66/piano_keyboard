@@ -114,18 +114,17 @@ pub struct KeyboardBuilder {
     width: u16,
     dot_ratio_1024: u16, // dot height/dot width
 
-    white_key_wide_width_um: u32,
-    white_key_small_width_cde_um: u32,
-    white_key_small_width_fb_um: u32,
-    white_key_small_width_ga_um: u32,
-    key_gap_um: u32,
+    white_key_wide_width_10um: u32,
+    white_key_small_width_cde_10um: u32,
+    white_key_small_width_fb_10um: u32,
+    white_key_small_width_ga_10um: u32,
 
-    black_key_width_um: u32,
-    black_key_height_um: u32,
+    black_key_width_10um: u32,
+    black_key_height_10um: u32,
     need_black_gap: bool,
 
-    white_key_height_um: u32,
-    white_key_wide_height_um: u32,
+    white_key_height_10um: u32,
+    white_key_wide_height_10um: u32,
 }
 impl KeyboardBuilder {
     pub fn new() -> KeyboardBuilder {
@@ -137,20 +136,18 @@ impl KeyboardBuilder {
             dot_ratio_1024: 1024,
 
             // http://www.rwgiangiulio.com/construction/manual/layout.jpg
-            // below measures are in µm
-            white_key_wide_width_um: 22_150,
-            white_key_small_width_cde_um: 13_970,
-            white_key_small_width_fb_um: 12_830,
-            white_key_small_width_ga_um: 13_080,
+            // below measures are in 10 µm
+            white_key_wide_width_10um: 22_15,
+            white_key_small_width_cde_10um: 13_97,
+            white_key_small_width_fb_10um: 12_83,
+            white_key_small_width_ga_10um: 13_08,
 
-            black_key_width_um: 11_000,
-            black_key_height_um: 80_000,
+            black_key_width_10um: 11_00,
+            black_key_height_10um: 80_00,
             need_black_gap: true,
 
-            white_key_height_um: 126_270,
-            white_key_wide_height_um: 45_000,
-
-            key_gap_um: 1_270, // use 126,27-80-45 for white key gap
+            white_key_height_10um: 126_27,
+            white_key_wide_height_10um: 45_00,
         }
     }
     pub fn is_rd64(mut self) -> KeyboardBuilder {
@@ -209,12 +206,15 @@ impl KeyboardBuilder {
                                 .filter(|k| KeyboardBuilder::is_white(*k))
                                 .count() as u16;
 
-        // left and right from the outer keys have a gap, too
-        let keyboard_width_um = (self.white_key_wide_width_um + self.key_gap_um)
-                                    * nr_of_white_keys as u32 + self.key_gap_um;
+        let key_gap_10um = self.white_key_height_10um - self.black_key_height_10um
+                                                  - self.white_key_wide_height_10um;
 
-        let key_gap = ((self.width as u32 * self.key_gap_um + keyboard_width_um/2)
-                                                / keyboard_width_um) as u16;
+        // left and right from the outer keys have a gap, too
+        let keyboard_width_10um = (self.white_key_wide_width_10um + key_gap_10um)
+                                    * nr_of_white_keys as u32 + key_gap_10um;
+
+        let key_gap = ((self.width as u32 * key_gap_10um + keyboard_width_10um/2)
+                                                / keyboard_width_10um) as u16;
         let black_gap = if self.need_black_gap { 
             key_gap
         }
@@ -230,13 +230,13 @@ impl KeyboardBuilder {
 
         let center_offset = (self.width-real_width as u16)/2;
 
-        let black_key_width = (((white_key_wide_width as u32) * self.black_key_width_um
-                                    + self.white_key_wide_width_um/2)
-                                    / self.white_key_wide_width_um) as u16;
+        let black_key_width = (((white_key_wide_width as u32) * self.black_key_width_10um
+                                    + self.white_key_wide_width_10um/2)
+                                    / self.white_key_wide_width_10um) as u16;
 
         let sum_white_key_small_width_cde = 
-            (3 * white_key_wide_width + 2 * key_gap - 2 * black_key_width
-                - 4*black_gap);
+            3 * white_key_wide_width + 2 * key_gap - 2 * black_key_width
+                - 4*black_gap;
         let (white_key_small_width_ce,white_key_small_width_d) = match sum_white_key_small_width_cde % 3 {
             0 => (sum_white_key_small_width_cde/3, sum_white_key_small_width_cde/3),
             1 => (sum_white_key_small_width_cde/3, sum_white_key_small_width_cde/3+1),
@@ -249,8 +249,8 @@ impl KeyboardBuilder {
              - 3 * black_key_width - 6 * black_gap;
 
         let white_key_small_width_g = (sum_white_key_small_width_fbga as u32
-                * self.white_key_small_width_ga_um
-                / (self.white_key_small_width_ga_um+self.white_key_small_width_fb_um)
+                * self.white_key_small_width_ga_10um
+                / (self.white_key_small_width_ga_10um+self.white_key_small_width_fb_10um)
                 / 2) as u16;
 
         // if sum_white_key_small_width_fbga is uneven, then there is no good solution.
@@ -261,20 +261,20 @@ impl KeyboardBuilder {
                                         -     white_key_small_width_g;
 
         let black_key_height = ((white_key_wide_width as u64 
-                                    * self.black_key_height_um as u64 * 1024
-                                + self.white_key_wide_width_um as u64 *1024/2)
-                                / self.white_key_wide_width_um as u64
+                                    * self.black_key_height_10um as u64 * 1024
+                                + self.white_key_wide_width_10um as u64 *1024/2)
+                                / self.white_key_wide_width_10um as u64
                                 / self.dot_ratio_1024 as u64) as u16;
         let white_key_wide_height = ((white_key_wide_width as u64
-                                        * self.white_key_wide_height_um as u64
-                                + self.white_key_wide_width_um as u64 * 1024/2)
-                                / self.white_key_wide_width_um as u64) as u16;
+                                        * self.white_key_wide_height_10um as u64
+                                + self.white_key_wide_width_10um as u64 * 1024/2)
+                                / self.white_key_wide_width_10um as u64) as u16;
 
         let height = 2*key_gap + black_gap + black_key_height + white_key_wide_height;
 
         println!("#white={}",nr_of_white_keys);
         println!("width/gap={}/{}",white_key_wide_width,key_gap);
-        println!("keyboard_width_um={}",keyboard_width_um);
+        println!("keyboard_width_10um={}",keyboard_width_10um);
         println!("real_width={}",real_width);
         println!("center_offset={}",center_offset);
 
@@ -406,7 +406,7 @@ mod tests {
 
     #[test]
     fn test_max_width() {
-        let keyboard = KeyboardBuilder::new()
+        let _keyboard = KeyboardBuilder::new()
                         .set_most_left_right_white_keys(0,127).unwrap()
                         .set_width(65535)
                         .build2d();
