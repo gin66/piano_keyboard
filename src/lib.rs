@@ -19,22 +19,20 @@ pub struct Keyboard {
     right_white_key: u8,
     width: u16,
     height: u16,
-    elements: Vec<Option<Element>>
+    elements: Vec<Element>
 }
 impl Keyboard {
     pub fn white_keys(&self) -> Vec<Rectangle> {
         let mut rects = vec![];
         for opt_element in self.elements.iter() {
             match opt_element {
-                Some(Element::WhiteKey(r1,r2)) => {
+                Element::WhiteKey(r1,r2) => {
                     rects.push(r1.clone());
                     rects.push(r2.clone());
                 },
-                Some(Element::BlackKey(r)) => {
+                Element::BlackKey(r) => {
                 },
-                Some(Element::Board(r)) => {
-                },
-                &None => {
+                Element::Board(r) => {
                 }
             }
         }
@@ -44,15 +42,13 @@ impl Keyboard {
         let mut rects = vec![];
         for opt_element in self.elements.iter() {
             match opt_element {
-                Some(Element::WhiteKey(r1,r2)) => {
+                Element::WhiteKey(r1,r2) => {
                 },
-                Some(Element::BlackKey(r)) => {
+                Element::BlackKey(r) => {
                     rects.push(r.clone());
                 },
-                Some(Element::Board(r)) => {
+                Element::Board(r) => {
                 },
-                &None => {
-                }
             }
         }
         rects
@@ -63,7 +59,6 @@ pub struct KeyboardBuilder {
     left_white_key: u8,
     right_white_key: u8,
     width: u16,
-    max_height: u16,
     dot_ratio_1024: u16, // dot height/dot width
 
     white_key_wide_width_um: u32,
@@ -87,7 +82,6 @@ impl KeyboardBuilder {
             left_white_key: 21,
             right_white_key: 108,
             width: 640,
-            max_height: 480,
             dot_ratio_1024: 1024,
 
             // http://www.rwgiangiulio.com/construction/manual/layout.jpg
@@ -130,10 +124,6 @@ impl KeyboardBuilder {
     }
     pub fn set_width(mut self, width: u16) -> KeyboardBuilder {
         self.width = width;
-        self
-    }
-    pub fn set_max_height(mut self, max_height: u16) -> KeyboardBuilder {
-        self.max_height = max_height;
         self
     }
     pub fn is_white(key: u8) -> bool {
@@ -213,7 +203,7 @@ impl KeyboardBuilder {
             width: real_width,
             height: 50,
         };
-        elements.push(Some(Element::Board(board_rect)));
+        elements.push(Element::Board(board_rect));
 
         let mut small_offsets = vec![0];
         let off = white_key_small_width_ce + black_gap;
@@ -269,7 +259,7 @@ impl KeyboardBuilder {
                     height: 50,
                 };
 
-                elements.push(Some(Element::WhiteKey(wide_rect, small_rect)));
+                elements.push(Element::WhiteKey(wide_rect, small_rect));
             }
             else {
                 let rect = Rectangle {
@@ -278,7 +268,7 @@ impl KeyboardBuilder {
                     width: black_key_width,
                     height: 50,
                 };
-                elements.push(Some(Element::BlackKey(rect)));
+                elements.push(Element::BlackKey(rect));
             }
         }
 
@@ -288,7 +278,7 @@ impl KeyboardBuilder {
             left_white_key: self.left_white_key,
             right_white_key: self.right_white_key,
             width: self.width,
-            height: self.max_height,
+            height: 100,
             elements
         }
     }

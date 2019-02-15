@@ -14,7 +14,6 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     let keyboard = KeyboardBuilder::new()
                         .set_width(width as u16)
-                        .set_max_height(height as u16)
                         .build();
 
     let path = Path::new(r"keyboard.png");
