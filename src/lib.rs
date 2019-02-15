@@ -191,6 +191,10 @@ impl KeyboardBuilder {
         self.width = width;
         self
     }
+    pub fn white_black_gap_present(mut self, gap_present: bool) -> KeyboardBuilder {
+        self.need_black_gap = gap_present;
+        self
+    }
     fn is_white(key: u8) -> bool {
         match key % 12 {
             0 | 2 | 4 | 5 | 7 | 9 | 11 => true,
@@ -256,12 +260,15 @@ impl KeyboardBuilder {
                                         - 2 * white_key_small_width_fb
                                         -     white_key_small_width_g;
 
-        let black_key_height = ((white_key_wide_width as u32 * self.black_key_height_um
-                                + self.white_key_wide_width_um/2)
-                                / self.white_key_wide_width_um) as u16;
-        let white_key_wide_height = ((white_key_wide_width as u32 * self.white_key_wide_height_um
-                                + self.white_key_wide_width_um/2)
-                                / self.white_key_wide_width_um) as u16;
+        let black_key_height = ((white_key_wide_width as u64 
+                                    * self.black_key_height_um as u64 * 1024
+                                + self.white_key_wide_width_um as u64 *1024/2)
+                                / self.white_key_wide_width_um as u64
+                                / self.dot_ratio_1024 as u64) as u16;
+        let white_key_wide_height = ((white_key_wide_width as u64
+                                        * self.white_key_wide_height_um as u64
+                                + self.white_key_wide_width_um as u64 * 1024/2)
+                                / self.white_key_wide_width_um as u64) as u16;
 
         let height = 2*key_gap + black_gap + black_key_height + white_key_wide_height;
 
@@ -393,3 +400,16 @@ impl KeyboardBuilder {
         }
     }
 }
+#[cfg(test)]
+mod tests {
+    use crate::KeyboardBuilder;
+
+    #[test]
+    fn test_max_width() {
+        let keyboard = KeyboardBuilder::new()
+                        .set_most_left_right_white_keys(0,127).unwrap()
+                        .set_width(65535)
+                        .build2d();
+    }
+}
+

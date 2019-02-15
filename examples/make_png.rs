@@ -40,7 +40,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     }
 
     for (color,rectangles) in vec![
-         (vec![255,255,255,255],keyboard.white_keys().into_iter()),
+         (vec![255,255,255,255],keyboard.white_keys(true).into_iter()),
          (vec![0,0,0,255      ],keyboard.black_keys().into_iter()) ].into_iter() {
     
         for rect in rectangles.into_iter() {
