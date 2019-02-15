@@ -55,6 +55,7 @@ pub struct Keyboard2d {
     pub right_white_key: u8,
     pub width: u16,
     pub height: u16,
+    pub unbalanced_a_g_keys: bool,
     elements: Vec<Element>
 }
 impl Keyboard2d {
@@ -113,9 +114,10 @@ pub struct KeyboardBuilder {
     right_white_key: u8,
     width: u16,
     dot_ratio_1024: u16, // dot height/dot width
+    centered: bool,
 
     white_key_wide_width_10um: u32,
-    white_key_small_width_cde_10um: u32,
+    //white_key_small_width_cde_10um: u32,
     white_key_small_width_fb_10um: u32,
     white_key_small_width_ga_10um: u32,
 
@@ -134,11 +136,12 @@ impl KeyboardBuilder {
             right_white_key: 108,
             width: 640,
             dot_ratio_1024: 1024,
+            centered: true,
 
             // http://www.rwgiangiulio.com/construction/manual/layout.jpg
             // below measures are in 10 µm
             white_key_wide_width_10um: 22_15,
-            white_key_small_width_cde_10um: 13_97,
+            //white_key_small_width_cde_10um: 13_97,
             white_key_small_width_fb_10um: 12_83,
             white_key_small_width_ga_10um: 13_08,
 
@@ -186,6 +189,10 @@ impl KeyboardBuilder {
     /// than this value in order to have equal spacing - as perfect as possible.
     pub fn set_width(mut self, width: u16) -> KeyboardBuilder {
         self.width = width;
+        self
+    }
+    pub fn centered(mut self, centered: bool) -> KeyboardBuilder {
+        self.centered = centered;
         self
     }
     pub fn white_black_gap_present(mut self, gap_present: bool) -> KeyboardBuilder {
@@ -260,6 +267,8 @@ impl KeyboardBuilder {
                                         - 2 * white_key_small_width_fb
                                         -     white_key_small_width_g;
 
+        let unbalanced_a_g_keys = white_key_small_width_a != white_key_small_width_g;
+
         let black_key_height = ((white_key_wide_width as u64 
                                     * self.black_key_height_10um as u64 * 1024
                                 + self.white_key_wide_width_10um as u64 *1024/2)
@@ -312,8 +321,12 @@ impl KeyboardBuilder {
         let off = off + black_key_width + black_gap - white_key_wide_width-key_gap;
         small_offsets.push(off); // b
 
-        let mut white_x = center_offset+key_gap;
-        let mut next_white_x = center_offset+key_gap;
+        let mut white_x = key_gap;
+        let mut next_white_x = key_gap;
+        if self.centered {
+            white_x += center_offset;
+            next_white_x += center_offset;
+        }
         for key in self.left_white_key..=self.right_white_key {
             if KeyboardBuilder::is_white(key) {
                 white_x = next_white_x;
@@ -396,6 +409,7 @@ impl KeyboardBuilder {
             right_white_key: self.right_white_key,
             width: self.width,
             height,
+            unbalanced_a_g_keys,
             elements
         }
     }
