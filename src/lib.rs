@@ -72,7 +72,6 @@ pub struct KeyboardBuilder {
     need_black_gap: bool,
 
     white_key_height_um: u32,
-    white_key_small_height_um: u32,
     white_key_wide_height_um: u32,
 }
 impl KeyboardBuilder {
@@ -92,11 +91,10 @@ impl KeyboardBuilder {
             white_key_small_width_ga_um: 13_080,
 
             black_key_width_um: 11_000,
-            black_key_height_um: 45_000,
+            black_key_height_um: 80_000,
             need_black_gap: true,
 
             white_key_height_um: 126_270,
-            white_key_small_height_um: 80_000,
             white_key_wide_height_um: 45_000,
 
             key_gap_um: 1_270, // use 126,27-80-45 for white key gap
@@ -189,6 +187,15 @@ impl KeyboardBuilder {
                                         - 2 * white_key_small_width_fb
                                         -     white_key_small_width_g;
 
+        let black_key_height = ((white_key_wide_width as u32 * self.black_key_height_um
+                                + self.white_key_wide_width_um/2)
+                                / self.white_key_wide_width_um) as u16;
+        let white_key_wide_height = ((white_key_wide_width as u32 * self.white_key_wide_height_um
+                                + self.white_key_wide_width_um/2)
+                                / self.white_key_wide_width_um) as u16;
+
+        let height = 2*key_gap + black_gap + black_key_height + white_key_wide_height;
+
         println!("#white={}",nr_of_white_keys);
         println!("width/gap={}/{}",white_key_wide_width,key_gap);
         println!("keyboard_width_um={}",keyboard_width_um);
@@ -236,9 +243,9 @@ impl KeyboardBuilder {
                 white_x = next_white_x;
                 let wide_rect = Rectangle {
                     x: white_x,
-                    y: 50,
+                    y: black_gap + black_key_height,
                     width: white_key_wide_width,
-                    height: 50,
+                    height: white_key_wide_height,
                 };
                 next_white_x += white_key_wide_width + key_gap;
 
@@ -256,7 +263,7 @@ impl KeyboardBuilder {
                     x: white_x + small_offsets[(key % 12) as usize],
                     y: 0,
                     width: key_width,
-                    height: 50,
+                    height: black_gap + black_key_height,
                 };
 
                 elements.push(Element::WhiteKey(wide_rect, small_rect));
@@ -266,7 +273,7 @@ impl KeyboardBuilder {
                     x: white_x + small_offsets[(key % 12) as usize],
                     y: 0,
                     width: black_key_width,
-                    height: 50,
+                    height: black_key_height,
                 };
                 elements.push(Element::BlackKey(rect));
             }

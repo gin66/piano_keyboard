@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
             let i = ((y*width+x)*4) as usize;
             data[i  ] = 150;
             data[i+1] = 150;
-            data[i+2] = 150;
+            data[i+2] = 0;
             data[i+3] = 255;
         }
     }
