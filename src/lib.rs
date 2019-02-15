@@ -9,31 +9,39 @@ pub struct Rectangle {
 
 #[derive(Debug)]
 pub enum Element {
-    WhiteKey(Rectangle, Rectangle),
+    WhiteKey {
+        wide: Rectangle,
+        small: Rectangle,
+        blind: Option<Rectangle>
+    },
     BlackKey(Rectangle),
     Board(Rectangle),
 }
 
-pub struct Keyboard {
-    left_white_key: u8,
-    right_white_key: u8,
-    width: u16,
-    height: u16,
+pub struct Keyboard2d {
+    pub left_white_key: u8,
+    pub right_white_key: u8,
+    pub width: u16,
+    pub height: u16,
     elements: Vec<Element>
 }
-impl Keyboard {
+impl Keyboard2d {
     pub fn white_keys(&self) -> Vec<Rectangle> {
         let mut rects = vec![];
         for opt_element in self.elements.iter() {
             match opt_element {
-                Element::WhiteKey(r1,r2) => {
+                Element::WhiteKey { 
+                        wide: r1,
+                        small: r2,
+                        blind: opt_blind,
+                }=> {
                     rects.push(r1.clone());
                     rects.push(r2.clone());
+                    if let Some(blind) = opt_blind {
+                        rects.push(blind.clone());
+                    }
                 },
-                Element::BlackKey(r) => {
-                },
-                Element::Board(r) => {
-                }
+                _ => ()
             }
         }
         rects
@@ -42,13 +50,10 @@ impl Keyboard {
         let mut rects = vec![];
         for opt_element in self.elements.iter() {
             match opt_element {
-                Element::WhiteKey(r1,r2) => {
-                },
                 Element::BlackKey(r) => {
                     rects.push(r.clone());
                 },
-                Element::Board(r) => {
-                },
+                _ => ()
             }
         }
         rects
@@ -131,7 +136,7 @@ impl KeyboardBuilder {
             _ => panic!("wrong value"),
         }
     }
-    pub fn build(self) -> Keyboard {
+    pub fn build2d(self) -> Keyboard2d {
         let nr_of_white_keys = (self.left_white_key..=self.right_white_key)
                                 .filter(|k| KeyboardBuilder::is_white(*k))
                                 .count() as u16;
@@ -266,7 +271,41 @@ impl KeyboardBuilder {
                     height: black_gap + black_key_height,
                 };
 
-                elements.push(Element::WhiteKey(wide_rect, small_rect));
+                let opt_blind = match key {
+                    k if k == self.left_white_key => {
+                        if small_rect.x > wide_rect.x {
+                            Some(Rectangle {
+                                x: wide_rect.x,
+                                y: 0,
+                                width: small_rect.x-wide_rect.x,
+                                height: black_gap + black_key_height,
+                            })
+                        }
+                        else {
+                            None
+                        }
+                    },
+                    k if k == self.right_white_key => {
+                        if small_rect.x + small_rect.width < wide_rect.x + wide_rect.width {
+                            Some(Rectangle {
+                                x: small_rect.x,
+                                y: 0,
+                                width: wide_rect.x+wide_rect.width -small_rect.x,
+                                height: black_gap + black_key_height,
+                            })
+                        }
+                        else {
+                            None
+                        }
+                    },
+                    _ => None
+                };
+
+                elements.push(Element::WhiteKey {
+                    wide: wide_rect,
+                    small: small_rect,
+                    blind: opt_blind,
+                });
             }
             else {
                 let rect = Rectangle {
@@ -281,7 +320,7 @@ impl KeyboardBuilder {
 
         println!("{:#?}", elements);
 
-        Keyboard {
+        Keyboard2d {
             left_white_key: self.left_white_key,
             right_white_key: self.right_white_key,
             width: self.width,

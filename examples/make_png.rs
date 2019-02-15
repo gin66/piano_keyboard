@@ -10,11 +10,13 @@ use png::HasParameters;
 use crate::piano_keyboard::KeyboardBuilder;
 
 fn main() -> Result<(), Box<std::error::Error>> {
-    let (width,height) = (800,300);
+    let width = 800;
 
     let keyboard = KeyboardBuilder::new()
                         .set_width(width as u16)
-                        .build();
+                        .build2d();
+
+    let height = keyboard.height as u32;
 
     let path = Path::new(r"keyboard.png");
     let file = File::create(path).unwrap();
