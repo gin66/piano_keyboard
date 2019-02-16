@@ -121,7 +121,6 @@ pub struct KeyboardBuilder {
     right_white_key: u8,
     width: u16,
     dot_ratio_1024: u16, // dot height/dot width
-    centered: bool,
 
     white_key_wide_width_10um: u32,
     //white_key_small_width_cde_10um: u32,
@@ -143,7 +142,6 @@ impl KeyboardBuilder {
             right_white_key: 108,
             width: 640,
             dot_ratio_1024: 1024,
-            centered: true,
 
             // http://www.rwgiangiulio.com/construction/manual/layout.jpg
             // below measures are in 10 µm
@@ -206,10 +204,6 @@ impl KeyboardBuilder {
             self.width = width;
             Ok(self)
         }
-    }
-    pub fn centered(mut self, centered: bool) -> KeyboardBuilder {
-        self.centered = centered;
-        self
     }
     pub fn white_black_gap_present(mut self, gap_present: bool) -> KeyboardBuilder {
         self.need_black_gap = gap_present;
@@ -302,12 +296,6 @@ impl KeyboardBuilder {
                                 / self.white_key_wide_width_10um as u64) as u16;
 
         let height = 2*key_gap + black_gap + black_key_height + white_key_wide_height;
-
-        println!("#white={}",nr_of_white_keys);
-        println!("width/gap={}/{}",white_key_wide_width,key_gap);
-        println!("keyboard_width_10um={}",keyboard_width_10um);
-        println!("real_width={}",real_width);
-        println!("center_offset={}",center_offset);
 
         let mut elements = vec![];
 
@@ -445,113 +433,6 @@ impl KeyboardBuilder {
                     white_x += gap;
                 }
             } 
-        }
-
-        if false {
-            let mut small_offsets = vec![0];
-            let off = white_key_small_width_ce + black_gap;
-            small_offsets.push(off); // c#
-            let off = off + black_key_width + black_gap - white_key_wide_width-key_gap;
-            small_offsets.push(off); // d
-            let off = off + white_key_small_width_d + black_gap;
-            small_offsets.push(off); // d#
-            let off = off + black_key_width + black_gap - white_key_wide_width-key_gap;
-            small_offsets.push(off); // e
-
-            small_offsets.push(0); // f
-            let off = white_key_small_width_fb + black_gap;
-            small_offsets.push(off); //f# 
-            let off = off + black_key_width + black_gap - white_key_wide_width-key_gap;
-            small_offsets.push(off); // g
-            let off = off + white_key_small_width_g + black_gap;
-            small_offsets.push(off); // g#
-            let off = off + black_key_width + black_gap - white_key_wide_width-key_gap;
-            small_offsets.push(off); // a
-            let off = off + white_key_small_width_a + black_gap;
-            small_offsets.push(off); // a#
-            let off = off + black_key_width + black_gap - white_key_wide_width-key_gap;
-            small_offsets.push(off); // b
-
-            let mut white_x = key_gap;
-            let mut next_white_x = key_gap;
-            if self.centered {
-                white_x += center_offset;
-                next_white_x += center_offset;
-            }
-            for key in self.left_white_key..=self.right_white_key {
-                if KeyboardBuilder::is_white(key) {
-                    white_x = next_white_x;
-                    let wide_rect = Rectangle {
-                        x: white_x,
-                        y: black_gap + black_key_height + key_gap,
-                        width: white_key_wide_width,
-                        height: white_key_wide_height,
-                    };
-                    next_white_x += white_key_wide_width + key_gap;
-
-                    let key_width = match key % 12 {
-                        0 => white_key_small_width_ce,
-                        2 => white_key_small_width_d,
-                        4 => white_key_small_width_ce,
-                        5 => white_key_small_width_fb,
-                        7 => white_key_small_width_g,
-                        9 => white_key_small_width_a,
-                        11 => white_key_small_width_fb,
-                        _ => panic!("impossible")
-                    };
-                    let small_rect = Rectangle {
-                        x: white_x + small_offsets[(key % 12) as usize],
-                        y: key_gap,
-                        width: key_width,
-                        height: black_gap + black_key_height,
-                    };
-
-                    let opt_blind = match key {
-                        k if k == self.left_white_key => {
-                            if small_rect.x > wide_rect.x {
-                                Some(Rectangle {
-                                    x: wide_rect.x,
-                                    y: key_gap,
-                                    width: small_rect.x-wide_rect.x,
-                                    height: black_gap + black_key_height,
-                                })
-                            }
-                            else {
-                                None
-                            }
-                        },
-                        k if k == self.right_white_key => {
-                            if small_rect.x + small_rect.width < wide_rect.x + wide_rect.width {
-                                Some(Rectangle {
-                                    x: small_rect.x,
-                                    y: key_gap,
-                                    width: wide_rect.x+wide_rect.width -small_rect.x,
-                                    height: black_gap + black_key_height,
-                                })
-                            }
-                            else {
-                                None
-                            }
-                        },
-                        _ => None
-                    };
-
-                    elements.push(Element::WhiteKey {
-                        wide: wide_rect,
-                        small: small_rect,
-                        blind: opt_blind,
-                    });
-                }
-                else {
-                    let rect = Rectangle {
-                        x: white_x + small_offsets[(key % 12) as usize],
-                        y: key_gap,
-                        width: black_key_width,
-                        height: black_key_height,
-                    };
-                    elements.push(Element::BlackKey(rect));
-                }
-            }
         }
 
         //println!("{:#?}", elements);
