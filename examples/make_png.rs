@@ -42,10 +42,10 @@ pub fn usage() -> clap::ArgMatches<'static> {
                 .help("Select right white key"),
         )
         .arg(
-            Arg::with_name("gaps")
-                .short("g")
-                .long("with-gaps")
-                .help("Enable gaps between black and white keys"),
+            Arg::with_name("no_gaps")
+                .short("n")
+                .long("no-gaps")
+                .help("No gaps between black and white keys"),
         )
         .arg(
             Arg::with_name("A88")
@@ -83,6 +83,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let keyboard = KeyboardBuilder::new()
                         .set_width(width as u16)?
                         .set_most_left_right_white_keys(left_key,right_key)?
+                        .white_black_gap_present(!matches.is_present("no_gaps"))
                         .build2d();
 
     let height = keyboard.height as u32;

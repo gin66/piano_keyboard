@@ -328,17 +328,17 @@ impl KeyboardBuilder {
                                 width: w,
                                 height: black_gap + black_key_height,
                             };
-                            //let opt_blind = if i < n-1 {
-                            //    Some(Rectangle {
-                            //    x: white_x+w,
-                            //    y: key_gap,
-                            //    width: width-w,
-                            //    height: black_gap + black_key_height,
-                            //})}
-                            //else {
-                            //    None
-                            //};
-                            let opt_blind = None;
+                            let opt_blind = if i == n-1 {
+                                Some(Rectangle {
+                                    x: white_x+w,
+                                    y: key_gap,
+                                    width: width-w,
+                                    height: black_gap + black_key_height,
+                                })
+                            }
+                            else {
+                                None
+                            };
                             elements.push(Element::WhiteKey {
                                 wide: wide_rect,
                                 small: small_rect,

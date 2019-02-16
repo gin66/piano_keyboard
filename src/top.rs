@@ -122,17 +122,23 @@ impl Top {
             ResultElement::Key(width,key) => {
                 // The correction is needed for alternating key d size
                 let corr = match key % 12 {
+                    KEY_C => width - self.cde_pars[0],
                     KEY_D => width - self.cde_pars[2],
+                    KEY_E => width - self.cde_pars[4],
+                    KEY_F => width - self.fgab_pars[0],
+                    KEY_G => width - self.fgab_pars[2],
+                    KEY_A => width - self.fgab_pars[4],
+                    KEY_B => width - self.fgab_pars[6],
                     _ => 0
                 };
                 match key % 12 {
-                    KEY_C => WhiteGapBlack(self.cde_key_width,self.cde_gap,self.cde_black_key_width),
+                    KEY_C => WhiteGapBlack(self.cde_key_width+corr,self.cde_gap,self.cde_black_key_width),
                     KEY_D => BlindWhiteGapBlack(self.d_left_blind_width,self.cde_key_width+corr,self.cde_gap,self.cde_black_key_width),
-                    KEY_E => BlindWhite(self.e_left_blind_width,self.cde_key_width),
-                    KEY_F => WhiteGapBlack(self.fb_white_width/2,self.fgab_gap,self.black_fs_as_width),
-                    KEY_G => BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_gs_width),
-                    KEY_A => BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_fs_as_width),
-                    KEY_B => BlindWhite(self.b_left_blind_width,self.fb_white_width/2),
+                    KEY_E => BlindWhite(self.e_left_blind_width,self.cde_key_width+corr),
+                    KEY_F => WhiteGapBlack(self.fb_white_width/2+corr,self.fgab_gap,self.black_fs_as_width),
+                    KEY_G => BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width/2+corr,self.cde_gap,self.black_gs_width),
+                    KEY_A => BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width/2+corr,self.cde_gap,self.black_fs_as_width),
+                    KEY_B => BlindWhite(self.b_left_blind_width,self.fb_white_width/2+corr),
                     _ => panic!("Should not happen")
                 }
             },
