@@ -469,20 +469,22 @@ impl Base {
             })
             .collect::<Vec<_>>()
     }
-    pub fn get_cde_width(&self) -> u16 {
+    pub fn get_cde_pars(&self) -> [u16;5] {
         // Gaps between cd and de are not enlarged.
         match (self.cde_keys_enlarged,self.d_key_enlarged) {
-            (true,true) => 2*self.identical_gap + 2*self.width_cde + self.width_d,
-            (true,false) => 2*self.identical_gap + 3*self.width_cde,
-            (false,true) => 2*self.identical_gap + 2*self.identical_key + self.width_d,
-            (false,false) => 2*self.identical_gap + 3*self.identical_key,
+            (true,true) => [self.width_cde,self.identical_gap,self.width_d,self.identical_gap,self.width_cde],
+            (true,false) => [self.width_cde,self.identical_gap,self.width_cde,self.identical_gap,self.width_cde],
+            (false,true) => [self.identical_key,self.identical_gap,self.width_d,self.identical_gap,self.identical_key],
+            (false,false) => [self.identical_key,self.identical_gap,self.identical_key,self.identical_gap,self.identical_key],
         }
     }
-    pub fn get_fgab_width(&self) -> u16 {
-        match self.fgab_keys_enlarged {
-            true => 3*self.identical_gap + 4*self.width_fgab,
-            false => 3*self.identical_gap + 4*self.identical_key
-        }
+    pub fn get_fgab_pars(&self) -> [u16;7] {
+        let gap = self.identical_gap;
+        let width = match self.fgab_keys_enlarged {
+            true => self.width_fgab,
+            false => self.identical_key,
+        };
+        [width,gap,width,gap,width,gap,width]
     }
     pub fn get_black_key_min_width(&self) -> u16 {
         self.kb_width_min

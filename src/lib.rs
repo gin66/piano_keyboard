@@ -25,8 +25,8 @@
 
 mod base;
 mod top;
-use crate::base::{Base,KEY_B};
-use crate::top::Top;
+use crate::base::Base;
+use crate::top::{Top,TopResultElement};
 
 #[derive(Clone, Debug)]
 pub struct Rectangle {
@@ -320,7 +320,8 @@ impl KeyboardBuilder {
         elements.push(Element::Board(board_rect));
 
         let mut white_x = 0;
-        for el in base_elements.into_iter() {
+        let n = base_elements.len()-1;
+        for (i,el) in base_elements.into_iter().enumerate() {
             match el {
                 base::ResultElement::Key(width,key) => {
                     let wide_rect = Rectangle {
@@ -329,16 +330,119 @@ impl KeyboardBuilder {
                         width: width,
                         height: white_key_wide_height,
                     };
-                    let small_rect = wide_rect.clone();
-                    elements.push(Element::WhiteKey {
-                        wide: wide_rect,
-                        small: small_rect,
-                        blind: None,
-                    });
+                    let tr = top.get_top_for(&el);
+                    println!("{}:{:?} {:?}",i,el,tr);
+                    match tr {
+                        TopResultElement::WhiteGapBlack(w,g,blk) => {
+                            let small_rect = Rectangle {
+                                x: white_x,
+                                y: key_gap,
+                                width: w,
+                                height: black_gap + black_key_height,
+                            };
+                            //let opt_blind = if i < n-1 {
+                            //    Some(Rectangle {
+                            //    x: white_x+w,
+                            //    y: key_gap,
+                            //    width: width-w,
+                            //    height: black_gap + black_key_height,
+                            //})}
+                            //else {
+                            //    None
+                            //};
+                            let opt_blind = None;
+                            elements.push(Element::WhiteKey {
+                                wide: wide_rect,
+                                small: small_rect,
+                                blind: opt_blind,
+                            });
+                        },
+                        TopResultElement::BlindWhiteGapBlack(blind,w,g,blk) => {
+                            let opt_blind = if i == 1 {
+                                Some(Rectangle {
+                                    x: white_x,
+                                    y: key_gap,
+                                    width: blind,
+                                    height: black_gap + black_key_height,
+                                })
+                            }
+                            else if i == n-1 {
+                                Some(Rectangle {
+                                    x: white_x + w + g,
+                                    y: key_gap,
+                                    width: width - w - g,
+                                    height: black_gap + black_key_height,
+                                })
+                            }
+                            else {
+                                None
+                            };
+                            let small_rect = Rectangle {
+                                x: white_x+blind,
+                                y: key_gap,
+                                width: w,
+                                height: black_gap + black_key_height,
+                            };
+                            elements.push(Element::WhiteKey {
+                                wide: wide_rect,
+                                small: small_rect,
+                                blind: opt_blind,
+                            });
+                        },
+                        TopResultElement::BlindWhite(g,w) => {
+                            let opt_blind = if i == 1 {
+                                Some(Rectangle {
+                                    x: white_x,
+                                    y: key_gap,
+                                    width: g,
+                                    height: black_gap + black_key_height,
+                                })
+                            }
+                            else {
+                                None
+                            };
+                            let small_rect = Rectangle {
+                                x: white_x+g,
+                                y: key_gap,
+                                width: w,
+                                height: black_gap + black_key_height,
+                            };
+                            elements.push(Element::WhiteKey {
+                                wide: wide_rect,
+                                small: small_rect,
+                                blind: opt_blind,
+                            });
+                        },
+                    };
+                    if i < n - 1 {
+                        match tr {
+                            TopResultElement::WhiteGapBlack(w,g,blk) => {
+                                let rect = Rectangle {
+                                    x: white_x + w + g,
+                                    y: key_gap,
+                                    width: blk,
+                                    height: black_key_height,
+                                };
+                                println!("{:?}",rect);
+                                elements.push(Element::BlackKey(rect));
+                            },
+                            TopResultElement::BlindWhiteGapBlack(blind,w,g,blk) => {
+                                let rect = Rectangle {
+                                    x: white_x + blind + w + g,
+                                    y: key_gap,
+                                    width: blk,
+                                    height: black_key_height,
+                                };
+                                println!("{:?}",rect);
+                                elements.push(Element::BlackKey(rect));
+                            },
+                            TopResultElement::BlindWhite(g,w) => ()
+                        }
+                    };
                     white_x += width;
                 }
-                base::ResultElement::Gap(width) => {
-                    white_x += width;
+                base::ResultElement::Gap(gap) => {
+                    white_x += gap;
                 }
             } 
         }
@@ -450,7 +554,7 @@ impl KeyboardBuilder {
             }
         }
 
-        println!("{:#?}", elements);
+        //println!("{:#?}", elements);
 
         Keyboard2d {
             left_white_key: self.left_white_key,

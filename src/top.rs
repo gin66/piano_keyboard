@@ -1,6 +1,6 @@
 use crate::KeyboardBuilder;
 use crate::Base;
-use crate::base::ResultElement;
+use crate::base::*;
 
 #[derive(Debug)]
 pub enum TopResultElement {
@@ -12,12 +12,15 @@ pub enum TopResultElement {
 #[derive(Default,Debug)]
 pub struct Top {
     kb_width_min: u16,
-    cde_width: u16,
+    cde_pars: [u16;5],
+    fgab_pars: [u16;7],
     cde_gap: u16,
-    fgab_width: u16,
     fgab_gap: u16,
 
     // calculated:
+    cde_width: u16,
+    fgab_width: u16,
+
     cde_key_width: u16,
     cde_black_key_width: u16,
     d_left_blind_width: u16,
@@ -36,8 +39,10 @@ impl Top {
         let mut top = Top::default();
 
         top.kb_width_min = base.get_black_key_min_width();
-        top.cde_width = base.get_cde_width();
-        top.fgab_width = base.get_fgab_width();
+        top.cde_pars = base.get_cde_pars();
+        top.cde_width = top.cde_pars.iter().sum();
+        top.fgab_pars = base.get_fgab_pars();
+        top.fgab_width = top.fgab_pars.iter().sum();
         if kb.need_black_gap {
             top.cde_gap = base.get_cde_gap();
             top.fgab_gap = base.get_fgab_gap();
@@ -97,6 +102,15 @@ impl Top {
         top.ga_white_width = ga_white_width;
         top.fb_white_width = fb_white_width;
 
+        top.d_left_blind_width = top.cde_key_width + 2*top.cde_gap + top.cde_black_key_width - top.cde_pars[0..=1].iter().sum::<u16>();
+        top.e_left_blind_width = 2*top.cde_key_width + 4*top.cde_gap + 2*top.cde_black_key_width - top.cde_pars[0..=3].iter().sum::<u16>();
+
+        top.g_left_blind_width = top.fb_white_width/2 + 2*top.fgab_gap + top.black_fs_as_width - top.fgab_pars[0..=1].iter().sum::<u16>();
+        top.a_left_blind_width = top.fb_white_width/2 + 4*top.fgab_gap + top.black_fs_as_width
+                                + top.ga_white_width/2 + top.black_gs_width - top.fgab_pars[0..=3].iter().sum::<u16>();
+        top.b_left_blind_width = top.fb_white_width/2 + 6*top.fgab_gap + 2*top.black_fs_as_width
+                                + top.ga_white_width + top.black_gs_width - top.fgab_pars[0..=5].iter().sum::<u16>();
+
         top
     }
     pub fn is_perfect(&self) -> bool {
@@ -105,13 +119,13 @@ impl Top {
     pub fn get_top_for(&self, el: &ResultElement) -> TopResultElement {
         match el {
             ResultElement::Key(width,key) => match key % 12 {
-                crate::base::KEY_C => TopResultElement::WhiteGapBlack(self.cde_key_width,self.cde_gap,self.cde_black_key_width),
-                crate::base::KEY_D => TopResultElement::BlindWhiteGapBlack(self.d_left_blind_width,self.cde_key_width,self.cde_gap,self.cde_black_key_width),
-                crate::base::KEY_E => TopResultElement::BlindWhite(self.e_left_blind_width,self.cde_key_width),
-                crate::base::KEY_F => TopResultElement::WhiteGapBlack(self.fb_white_width,self.fgab_gap,self.black_fs_as_width),
-                crate::base::KEY_G => TopResultElement::BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width,self.cde_gap,self.black_gs_width),
-                crate::base::KEY_A => TopResultElement::BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width,self.cde_gap,self.black_fs_as_width),
-                crate::base::KEY_B => TopResultElement::BlindWhite(self.b_left_blind_width,self.fb_white_width),
+                KEY_C => TopResultElement::WhiteGapBlack(self.cde_key_width,self.cde_gap,self.cde_black_key_width),
+                KEY_D => TopResultElement::BlindWhiteGapBlack(self.d_left_blind_width,self.cde_key_width,self.cde_gap,self.cde_black_key_width),
+                KEY_E => TopResultElement::BlindWhite(self.e_left_blind_width,self.cde_key_width),
+                KEY_F => TopResultElement::WhiteGapBlack(self.fb_white_width/2,self.fgab_gap,self.black_fs_as_width),
+                KEY_G => TopResultElement::BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_gs_width),
+                KEY_A => TopResultElement::BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_fs_as_width),
+                KEY_B => TopResultElement::BlindWhite(self.b_left_blind_width,self.fb_white_width/2),
                 _ => panic!("Should not happen")
             },
             ResultElement::Gap(_) => panic!("Do not call with Gap")
