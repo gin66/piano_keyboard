@@ -58,8 +58,7 @@ pub struct Keyboard2d {
     pub right_white_key: u8,
     pub width: u16,
     pub height: u16,
-    // Is true for a keyboard without compromises on width/gaps
-    pub perfect: bool,
+    perfect: bool,
     elements: Vec<Element>
 }
 impl Keyboard2d {
@@ -109,6 +108,11 @@ impl Keyboard2d {
             }
         }
         rects
+    }
+    /// Is true for a keyboard without compromises on width/gaps.
+    /// For example: cargo run --example make_png -- --width 811
+    pub fn is_perfect(&self) -> bool {
+        self.perfect
     }
 }
 
@@ -213,6 +217,11 @@ impl KeyboardBuilder {
     }
     /// Final build the keyboard, which means to perform all calculations and
     /// create all the elements.
+    ///
+    /// Warning: For some value combinations, the strategies in base.rs find_solution() may not
+    /// be successful and thus a panic will occur.
+    ///
+    /// TODO: Create a fallback solution (cargo run --example make_png -- --width 810).
     pub fn build2d(self) -> Keyboard2d {
         let base = Base::calculate(&self);
         let top = Top::calculate(&self, &base);
@@ -360,7 +369,6 @@ impl KeyboardBuilder {
                                     width: blk,
                                     height: black_key_height,
                                 };
-                                println!("{:?}",rect);
                                 elements.push(Element::BlackKey(rect));
                             },
                             TopResultElement::BlindWhiteGapBlack(blind,w,g,blk) => {
@@ -370,7 +378,6 @@ impl KeyboardBuilder {
                                     width: blk,
                                     height: black_key_height,
                                 };
-                                println!("{:?}",rect);
                                 elements.push(Element::BlackKey(rect));
                             },
                             TopResultElement::BlindWhite(_g,_w) => ()

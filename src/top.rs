@@ -114,7 +114,7 @@ impl Top {
         top
     }
     pub fn is_perfect(&self) -> bool {
-        true
+        self.black_fs_as_width == self.black_gs_width
     }
     pub fn get_top_for(&self, el: &ResultElement) -> TopResultElement {
         use crate::TopResultElement::*;

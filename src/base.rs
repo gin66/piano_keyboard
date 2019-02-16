@@ -227,7 +227,7 @@ impl Base {
 
             // Avoid endless loop
             if delta == last_delta {
-                panic!("{:?}\nno solution. remaining delta {}",self,delta);
+                panic!("{:?}\n\n=================\nno solution. remaining delta {}\n=================",self,delta);
             }
             last_delta = delta;
 

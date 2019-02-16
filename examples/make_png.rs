@@ -128,5 +128,12 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     println!("Dimension: {}*{}",height,width);
 
+    if keyboard.is_perfect() {
+        println!("This is a perfect keyboard");
+    }
+    else {
+        println!("This is not a perfect keyboard");
+    }
+
     Ok(())    
 }
