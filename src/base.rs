@@ -17,6 +17,12 @@ const KEY_AIS: u8 = 10;
 const KEY_B: u8 = 11;
 
 #[derive(Debug)]
+pub enum ResultElement {
+    Key(u16,u8),
+    Gap(u16),
+}
+
+#[derive(Debug)]
 enum Element {
     IdenticalWhite(u8),
     IdenticalGap,
@@ -34,8 +40,6 @@ enum Element {
 pub struct Base {
     width: u16,
     nr_of_white_keys: u16,
-
-    perfect: bool,
 
     elements: Vec<Element>,
     key_gap_min: u16,
@@ -79,7 +83,6 @@ impl Base {
     pub fn calculate(kb: &KeyboardBuilder) -> Base {
         let mut base = Base::default();
         base.width = kb.width;
-        base.perfect = true;
 
         // Derive key gap measure from the given dimensions
         let key_gap_10um = kb.white_key_height_10um - kb.black_key_height_10um
@@ -442,6 +445,25 @@ impl Base {
             }
 
         }
-    } 
+    }
+    pub fn result(&self) -> (bool,Vec<ResultElement>) {
+        let result_elements = self.elements.iter()
+            .map(|e| match e {
+                Element::IdenticalWhite(key) => ResultElement::Key(self.identical_key,*key),
+                Element::IdenticalGap => ResultElement::Gap(self.identical_gap),
+                Element::GapBC => ResultElement::Gap(self.gap_bc),
+                Element::GapEF => ResultElement::Gap(self.gap_ef),
+                Element::KeyD(key) => ResultElement::Key(self.width_d,*key),
+                Element::KeyCDE(key) => ResultElement::Key(self.width_cde,*key),
+                Element::KeyFGAB(key) => ResultElement::Key(self.width_fgab,*key),
+                Element::OutterGap => ResultElement::Gap(self.outter_gaps),
+                Element::EnlargedOutterLeftKey(key) => ResultElement::Key(self.outter_left_key,*key),
+                Element::EnlargedOutterRightKey(key) => ResultElement::Key(self.outter_right_key,*key),
+            })
+            .collect::<Vec<_>>();
+        let perfect = !self.d_key_enlarged && !self.alternating_d_key_enlarged && !self.end_keys_enlarged
+                                           && !self.cde_keys_enlarged && !self.fgab_keys_enlarged;
+        (perfect,result_elements)
+    }
 }
 
