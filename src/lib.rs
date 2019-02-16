@@ -21,6 +21,11 @@
 //! is called build2d().
 //!
 /// This is just another rectangle definition.
+///
+
+mod base;
+use crate::base::Base;
+
 #[derive(Clone, Debug)]
 pub struct Rectangle {
     pub x: u16,
@@ -168,10 +173,13 @@ impl KeyboardBuilder {
             Err("left white key right from right white key ".to_string())
         }
         else if left_white_key > 127 {
-            Err("left white key is out of range ".to_string())
+            Err("left white key is out of range".to_string())
         }
         else if right_white_key > 127 {
-            Err("right white key is out of range ".to_string())
+            Err("right white key is out of range".to_string())
+        }
+        else if right_white_key - left_white_key < 11 {
+            Err("Keyboard must be at least one octave".to_string())
         }
         else if !KeyboardBuilder::is_white(left_white_key) {
             Err("left white key is not a white key".to_string())
@@ -187,9 +195,14 @@ impl KeyboardBuilder {
     }
     /// Set the desired keyboard width in pixels. The built keyboard is regularly smaller
     /// than this value in order to have equal spacing - as perfect as possible.
-    pub fn set_width(mut self, width: u16) -> KeyboardBuilder {
-        self.width = width;
-        self
+    pub fn set_width(mut self, width: u16) -> Result<KeyboardBuilder,String> {
+        if width > 65535-127 {
+            Err("Requested width too big".to_string())
+        }
+        else {
+            self.width = width;
+            Ok(self)
+        }
     }
     pub fn centered(mut self, centered: bool) -> KeyboardBuilder {
         self.centered = centered;
@@ -209,6 +222,8 @@ impl KeyboardBuilder {
     /// Final build the keyboard, which means to perform all calculations and
     /// create all the elements.
     pub fn build2d(self) -> Keyboard2d {
+        let base = Base::calculate(&self);
+
         let nr_of_white_keys = (self.left_white_key..=self.right_white_key)
                                 .filter(|k| KeyboardBuilder::is_white(*k))
                                 .count() as u16;
@@ -422,8 +437,17 @@ mod tests {
     fn test_max_width() {
         let _keyboard = KeyboardBuilder::new()
                         .set_most_left_right_white_keys(0,127).unwrap()
-                        .set_width(65535)
+                        .set_width(65535-127).unwrap()
                         .build2d();
+    }
+    #[test]
+    fn test_several_widths() {
+        for width in 65000..65535-127 {
+            let _keyboard = KeyboardBuilder::new()
+                            .set_most_left_right_white_keys(0,127).unwrap()
+                            .set_width(width).unwrap()
+                            .build2d();
+        }
     }
 }
 

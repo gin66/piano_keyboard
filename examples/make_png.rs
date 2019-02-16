@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let width = 800;
 
     let keyboard = KeyboardBuilder::new()
-                        .set_width(width as u16)
+                        .set_width(width as u16)?
                         .set_most_left_right_white_keys(24,35)?
                         .build2d();
 
