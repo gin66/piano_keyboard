@@ -6,17 +6,16 @@
 //! As reference has been used internet resource displaying an
 //! [octave drawing](http://www.rwgiangiulio.com/construction/manual/layout.jpg).
 //! The dimensions described there have been used to create the elements of
-//! a piano keyboard, which can be used to create for example an ovtave like this:
+//! a piano keyboard, which can be used to create for example an octave like this:
 //! ![img](file:../../../keyboard.png)
 //!
-//! The graphical representation only provides the white and black areas for the keys,
-//! and the keyboard rectangle, which is drawn gray in above picture.
+//! The graphical representation only provides the white and black areas for the keys.
 //! It is visible, that between white keys and even between white and black keys a gap
 //! is ensured.
 //!
-//! The gap between white and black keys can be remove by an option of the KeyboardBuilder.
+//! The gap between white and black keys can be removed by an option of the KeyboardBuilder.
 //! 
-//! The interface is prepared to be compatible an extention towards a 3d keyboard.
+//! The interface is prepared to be compatible for an extension towards a 3d keyboard.
 //! That's why the returned keyboard is called Keyboard2D and the related build function
 //! is called build2d().
 //!
@@ -51,9 +50,6 @@ pub enum Element {
     },
     /// A black key consists of only one rectangle
     BlackKey(Rectangle),
-    /// Finally the whole keyboard is returned as a rectangle, which is by one gap
-    /// wider in each direction than the keyboard keys.
-    Board(Rectangle),
 }
 
 /// The returned 2d Keyboard with all calculated elements.
@@ -62,7 +58,8 @@ pub struct Keyboard2d {
     pub right_white_key: u8,
     pub width: u16,
     pub height: u16,
-    pub unbalanced_a_g_keys: bool,
+    // Is true for a keyboard without compromises on width/gaps
+    pub perfect: bool,
     elements: Vec<Element>
 }
 impl Keyboard2d {
@@ -136,7 +133,6 @@ pub struct KeyboardBuilder {
 }
 impl KeyboardBuilder {
     pub fn new() -> KeyboardBuilder {
-        // 88 note piano range from A0 to C8
         KeyboardBuilder {
             left_white_key: 21,
             right_white_key: 108,
@@ -167,7 +163,7 @@ impl KeyboardBuilder {
     }
     /// The keys are defined by MIDI key codes.
     /// This means the values have to be in range 0..128, with 0 representing C_-1.
-    /// Thus a normal 88 keyboard, which is the default, uses key codes 21 (A_0) to 108 (C_8).
+    /// Thus the default 88 keyboard uses key codes 21 (A_0) to 108 (C_8).
     pub fn set_most_left_right_white_keys(mut self,
                   left_white_key: u8, right_white_key: u8) -> Result<KeyboardBuilder,String> {
         if left_white_key > right_white_key{
@@ -194,8 +190,7 @@ impl KeyboardBuilder {
             Ok(self)
         }
     }
-    /// Set the desired keyboard width in pixels. The built keyboard is regularly smaller
-    /// than this value in order to have equal spacing - as perfect as possible.
+    /// Sets the desired keyboard width in pixels.
     pub fn set_width(mut self, width: u16) -> Result<KeyboardBuilder,String> {
         if width > 65535-127 {
             Err("Requested width too big".to_string())
@@ -222,7 +217,6 @@ impl KeyboardBuilder {
         let base = Base::calculate(&self);
         let top = Top::calculate(&self, &base);
 
-        let perfect = base.is_perfect() && top.is_perfect();
         let base_elements = base.get_elements();
 
         let nr_of_white_keys = (self.left_white_key..=self.right_white_key)
@@ -249,42 +243,6 @@ impl KeyboardBuilder {
 
         let white_key_wide_width = max_pure_white_key_width / nr_of_white_keys;
 
-        let real_width = (white_key_wide_width + key_gap) * nr_of_white_keys + key_gap;
-
-        let center_offset = (self.width-real_width as u16)/2;
-
-        let black_key_width = (((white_key_wide_width as u32) * self.black_key_width_10um
-                                    + self.white_key_wide_width_10um/2)
-                                    / self.white_key_wide_width_10um) as u16;
-
-        let sum_white_key_small_width_cde = 
-            3 * white_key_wide_width + 2 * key_gap - 2 * black_key_width
-                - 4*black_gap;
-        let (white_key_small_width_ce,white_key_small_width_d) = match sum_white_key_small_width_cde % 3 {
-            0 => (sum_white_key_small_width_cde/3, sum_white_key_small_width_cde/3),
-            1 => (sum_white_key_small_width_cde/3, sum_white_key_small_width_cde/3+1),
-            2 => (sum_white_key_small_width_cde/3+1, sum_white_key_small_width_cde/3),
-            _ => panic!("impossible") 
-        };
-        
-        let sum_white_key_small_width_fbga = 
-            4 * white_key_wide_width + 3 * key_gap
-             - 3 * black_key_width - 6 * black_gap;
-
-        let white_key_small_width_g = (sum_white_key_small_width_fbga as u32
-                * self.white_key_small_width_ga_10um
-                / (self.white_key_small_width_ga_10um+self.white_key_small_width_fb_10um)
-                / 2) as u16;
-
-        // if sum_white_key_small_width_fbga is uneven, then there is no good solution.
-        // => enlarge a
-        let white_key_small_width_fb = sum_white_key_small_width_fbga / 2 - white_key_small_width_g;
-        let white_key_small_width_a = sum_white_key_small_width_fbga
-                                        - 2 * white_key_small_width_fb
-                                        -     white_key_small_width_g;
-
-        let unbalanced_a_g_keys = white_key_small_width_a != white_key_small_width_g;
-
         let black_key_height = ((white_key_wide_width as u64 
                                     * self.black_key_height_10um as u64 * 1024
                                 + self.white_key_wide_width_10um as u64/2)
@@ -299,19 +257,11 @@ impl KeyboardBuilder {
 
         let mut elements = vec![];
 
-        let board_rect = Rectangle {
-            x: center_offset,
-            y: 0,
-            width: real_width,
-            height,
-        };
-        elements.push(Element::Board(board_rect));
-
         let mut white_x = 0;
         let n = base_elements.len()-1;
         for (i,el) in base_elements.into_iter().enumerate() {
             match el {
-                base::ResultElement::Key(width,key) => {
+                base::ResultElement::Key(width,_key) => {
                     let wide_rect = Rectangle {
                         x: white_x,
                         y: black_gap + black_key_height + key_gap,
@@ -319,9 +269,8 @@ impl KeyboardBuilder {
                         height: white_key_wide_height,
                     };
                     let tr = top.get_top_for(&el);
-                    println!("{}:{:?} {:?}",i,el,tr);
                     match tr {
-                        TopResultElement::WhiteGapBlack(w,g,blk) => {
+                        TopResultElement::WhiteGapBlack(w,_g,_blk) => {
                             let small_rect = Rectangle {
                                 x: white_x,
                                 y: key_gap,
@@ -345,7 +294,7 @@ impl KeyboardBuilder {
                                 blind: opt_blind,
                             });
                         },
-                        TopResultElement::BlindWhiteGapBlack(blind,w,g,blk) => {
+                        TopResultElement::BlindWhiteGapBlack(blind,w,g,_blk) => {
                             let opt_blind = if i == 1 {
                                 Some(Rectangle {
                                     x: white_x,
@@ -424,7 +373,7 @@ impl KeyboardBuilder {
                                 println!("{:?}",rect);
                                 elements.push(Element::BlackKey(rect));
                             },
-                            TopResultElement::BlindWhite(g,w) => ()
+                            TopResultElement::BlindWhite(_g,_w) => ()
                         }
                     };
                     white_x += width;
@@ -442,7 +391,7 @@ impl KeyboardBuilder {
             right_white_key: self.right_white_key,
             width: self.width,
             height,
-            unbalanced_a_g_keys,
+            perfect: base.is_perfect() && top.is_perfect(),
             elements
         }
     }

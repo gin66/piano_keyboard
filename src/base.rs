@@ -218,7 +218,7 @@ impl Base {
     fn find_solution(&mut self) {
         let mut last_delta = 0;
         loop {
-            let (current,delta) = self.current_width();
+            let (_current,delta) = self.current_width();
             println!("{}/{}",delta,self.nr_of_white_keys);
 
             if delta == 0 {

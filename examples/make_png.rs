@@ -66,7 +66,7 @@ pub fn usage() -> clap::ArgMatches<'static> {
 fn main() -> Result<(), Box<std::error::Error>> {
     let matches = usage();
 
-    let mut width = value_t!(matches, "width", u32).unwrap_or_else(|e| e.exit());
+    let width = value_t!(matches, "width", u32).unwrap_or_else(|e| e.exit());
 
     let mut left_key = value_t!(matches, "left", u8).unwrap_or_else(|e| e.exit());
     let mut right_key = value_t!(matches, "right", u8).unwrap_or_else(|e| e.exit());
