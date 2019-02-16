@@ -3,18 +3,18 @@
 
 use crate::KeyboardBuilder;
 
-const KEY_C: u8 = 0;
-const KEY_CIS: u8 = 1;
-const KEY_D: u8 = 2;
-const KEY_DIS: u8 = 3;
-const KEY_E: u8 = 4;
-const KEY_F: u8 = 5;
-const KEY_FIS: u8 = 6;
-const KEY_G: u8 = 7;
-const KEY_GIS: u8 = 8;
-const KEY_A: u8 = 9;
-const KEY_AIS: u8 = 10;
-const KEY_B: u8 = 11;
+pub const KEY_C: u8 = 0;
+//pub const KEY_CIS: u8 = 1;
+pub const KEY_D: u8 = 2;
+//pub const KEY_DIS: u8 = 3;
+pub const KEY_E: u8 = 4;
+pub const KEY_F: u8 = 5;
+//pub const KEY_FIS: u8 = 6;
+pub const KEY_G: u8 = 7;
+//pub const KEY_GIS: u8 = 8;
+pub const KEY_A: u8 = 9;
+//pub const KEY_AIS: u8 = 10;
+pub const KEY_B: u8 = 11;
 
 #[derive(Debug)]
 pub enum ResultElement {
@@ -44,6 +44,7 @@ pub struct Base {
     elements: Vec<Element>,
     key_gap_min: u16,
     kw_width_min: u16,
+    kb_width_min: u16,
 
     identical_key: u16,
     identical_gap: u16,
@@ -100,6 +101,8 @@ impl Base {
         // Calculate the lower values for key gap and white key
         base.key_gap_min = (key_gap_10um * kb.width as u32 / keyboard_width_10um) as u16;
         base.kw_width_min = (kb.white_key_wide_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
+
+        base.kb_width_min = (kb.black_key_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
 
         // If the above remainders sum up to more than 1, then kw_width_min should be increased
         if base.nr_of_white_keys * (base.kw_width_min + 1) + (base.nr_of_white_keys + 1) * base.key_gap_min <= base.width {
@@ -446,8 +449,12 @@ impl Base {
 
         }
     }
-    pub fn result(&self) -> (bool,Vec<ResultElement>) {
-        let result_elements = self.elements.iter()
+    pub fn is_perfect(&self) -> bool {
+        !self.d_key_enlarged && !self.alternating_d_key_enlarged && !self.end_keys_enlarged
+                                           && !self.cde_keys_enlarged && !self.fgab_keys_enlarged
+    }
+    pub fn get_elements(&self) -> Vec<ResultElement> {
+        self.elements.iter()
             .map(|e| match e {
                 Element::IdenticalWhite(key) => ResultElement::Key(self.identical_key,*key),
                 Element::IdenticalGap => ResultElement::Gap(self.identical_gap),
@@ -460,10 +467,31 @@ impl Base {
                 Element::EnlargedOutterLeftKey(key) => ResultElement::Key(self.outter_left_key,*key),
                 Element::EnlargedOutterRightKey(key) => ResultElement::Key(self.outter_right_key,*key),
             })
-            .collect::<Vec<_>>();
-        let perfect = !self.d_key_enlarged && !self.alternating_d_key_enlarged && !self.end_keys_enlarged
-                                           && !self.cde_keys_enlarged && !self.fgab_keys_enlarged;
-        (perfect,result_elements)
+            .collect::<Vec<_>>()
+    }
+    pub fn get_cde_width(&self) -> u16 {
+        // Gaps between cd and de are not enlarged.
+        match (self.cde_keys_enlarged,self.d_key_enlarged) {
+            (true,true) => 2*self.identical_gap + 2*self.width_cde + self.width_d,
+            (true,false) => 2*self.identical_gap + 3*self.width_cde,
+            (false,true) => 2*self.identical_gap + 2*self.identical_key + self.width_d,
+            (false,false) => 2*self.identical_gap + 3*self.identical_key,
+        }
+    }
+    pub fn get_fgab_width(&self) -> u16 {
+        match self.fgab_keys_enlarged {
+            true => 3*self.identical_gap + 4*self.width_fgab,
+            false => 3*self.identical_gap + 4*self.identical_key
+        }
+    }
+    pub fn get_black_key_min_width(&self) -> u16 {
+        self.kb_width_min
+    }
+    pub fn get_cde_gap(&self) -> u16 {
+        self.identical_gap
+    }
+    pub fn get_fgab_gap(&self) -> u16 {
+        self.identical_gap
     }
 }
 

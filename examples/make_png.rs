@@ -57,5 +57,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
 
     writer.write_image_data(&data).unwrap();
 
+    println!("Dimension: {}*{}",height,width);
+
     Ok(())    
 }
