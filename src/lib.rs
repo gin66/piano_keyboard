@@ -1,6 +1,6 @@
 //! # Piano_Keyboard
 //!
-//! This crates provides the graphical elements in order to draw a piano keyboard
+//! This crate provides the graphical elements in order to draw a piano keyboard
 //! with close to realistic appearance.
 //!
 //! As reference has been used internet resource displaying an
