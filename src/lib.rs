@@ -9,24 +9,31 @@
 //! a piano keyboard, which can be used to create for example an octave like this:
 //! ![img](file:../../../keyboard.png)
 //!
-//! The graphical representation only provides the white and black areas for the keys.
 //! It is visible, that between white keys and even between white and black keys a gap
 //! is ensured.
+//!
+//! The graphical representation only provides the white and black areas for the keys.
+//! Those areas are represented by pixel accurate, non-overlapping rectangles.
+//! No aliasing or similar is done on this level.
+//!
+//! Pixel accurate has the consequence, that in order to fill the requested width,
+//! any gaps, white or black keys may need to be modified by up to one pixel.
+//! Those changes may or may not be visible. If no adjustments have been made for
+//! a given width and key range is reported by the function is_perfect()
 //!
 //! The gap between white and black keys can be removed by an option of the KeyboardBuilder.
 //! 
 //! The interface is prepared to be compatible for an extension towards a 3d keyboard.
 //! That's why the returned keyboard is called Keyboard2D and the related build function
 //! is called build2d().
-//!
-/// This is just another rectangle definition.
-///
 
 mod base;
 mod top;
 use crate::base::Base;
 use crate::top::{Top,TopResultElement};
 
+/// This is just another rectangle definition.
+///
 #[derive(Clone, Debug)]
 pub struct Rectangle {
     pub x: u16,
@@ -63,12 +70,8 @@ pub struct Keyboard2d {
 }
 impl Keyboard2d {
     /// This function is the preferred way to iterate through all elements.
-    /// The sequence is:
-    ///
-    /// * 1.: Keyboard 
-    /// * 2.: Left outter white key
-    /// * 3..n-1.: subsequent keys - white or black
-    /// * n.: Right outter white key
+    /// The sequence is from left to right alternating keys in order:
+    /// white,black,white,....,black,white
     ///
     pub fn iter(&self) -> std::slice::Iter<Element> {
         self.elements.iter()
