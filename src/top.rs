@@ -117,16 +117,24 @@ impl Top {
         true
     }
     pub fn get_top_for(&self, el: &ResultElement) -> TopResultElement {
+        use crate::TopResultElement::*;
         match el {
-            ResultElement::Key(width,key) => match key % 12 {
-                KEY_C => TopResultElement::WhiteGapBlack(self.cde_key_width,self.cde_gap,self.cde_black_key_width),
-                KEY_D => TopResultElement::BlindWhiteGapBlack(self.d_left_blind_width,self.cde_key_width,self.cde_gap,self.cde_black_key_width),
-                KEY_E => TopResultElement::BlindWhite(self.e_left_blind_width,self.cde_key_width),
-                KEY_F => TopResultElement::WhiteGapBlack(self.fb_white_width/2,self.fgab_gap,self.black_fs_as_width),
-                KEY_G => TopResultElement::BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_gs_width),
-                KEY_A => TopResultElement::BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_fs_as_width),
-                KEY_B => TopResultElement::BlindWhite(self.b_left_blind_width,self.fb_white_width/2),
-                _ => panic!("Should not happen")
+            ResultElement::Key(width,key) => {
+                // The correction is needed for alternating key d size
+                let corr = match key % 12 {
+                    KEY_D => width - self.cde_pars[2],
+                    _ => 0
+                };
+                match key % 12 {
+                    KEY_C => WhiteGapBlack(self.cde_key_width,self.cde_gap,self.cde_black_key_width),
+                    KEY_D => BlindWhiteGapBlack(self.d_left_blind_width,self.cde_key_width+corr,self.cde_gap,self.cde_black_key_width),
+                    KEY_E => BlindWhite(self.e_left_blind_width,self.cde_key_width),
+                    KEY_F => WhiteGapBlack(self.fb_white_width/2,self.fgab_gap,self.black_fs_as_width),
+                    KEY_G => BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_gs_width),
+                    KEY_A => BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width/2,self.cde_gap,self.black_fs_as_width),
+                    KEY_B => BlindWhite(self.b_left_blind_width,self.fb_white_width/2),
+                    _ => panic!("Should not happen")
+                }
             },
             ResultElement::Gap(_) => panic!("Do not call with Gap")
         }

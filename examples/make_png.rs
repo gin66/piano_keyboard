@@ -6,15 +6,83 @@ use std::io::BufWriter;
 
 use png;
 use png::HasParameters;
+use clap::{crate_authors, crate_version};
+use clap::{App, Arg};
+use clap::value_t;
 
 use crate::piano_keyboard::KeyboardBuilder;
 
+pub fn usage() -> clap::ArgMatches<'static> {
+    App::new("piano_keyboard demo")
+        .version(crate_version!())
+        .author(crate_authors!("\n"))
+        .about("Example for piano_keyboard")
+        .arg(
+            Arg::with_name("width")
+                .short("w")
+                .long("width")
+                .takes_value(true)
+                .default_value("800")
+                .help("Set width of keyboard"),
+        )
+        .arg(
+            Arg::with_name("left")
+                .short("l")
+                .long("left-white-key")
+                .takes_value(true)
+                .default_value("24")
+                .help("Select left white key"),
+        )
+        .arg(
+            Arg::with_name("right")
+                .short("r")
+                .long("right-white-key")
+                .default_value("35")
+                .takes_value(true)
+                .help("Select right white key"),
+        )
+        .arg(
+            Arg::with_name("gaps")
+                .short("g")
+                .long("with-gaps")
+                .help("Enable gaps between black and white keys"),
+        )
+        .arg(
+            Arg::with_name("A88")
+                .long("a88")
+                .help("Select 88 key Piano like Roland A88"),
+        )
+        .arg(
+            Arg::with_name("RD64")
+                .long("rd64")
+                .help("Select 64 key Piano like Roland RD-64"),
+        )
+        .arg(Arg::with_name("verbose").multiple(true).short("v"))
+        .arg(Arg::with_name("debug").short("d"))
+        .get_matches()
+}
+
+
 fn main() -> Result<(), Box<std::error::Error>> {
-    let width = 800;
+    let matches = usage();
+
+    let mut width = value_t!(matches, "width", u32).unwrap_or_else(|e| e.exit());
+
+    let mut left_key = value_t!(matches, "left", u8).unwrap_or_else(|e| e.exit());
+    let mut right_key = value_t!(matches, "right", u8).unwrap_or_else(|e| e.exit());
+
+    if matches.is_present("RD64") {
+        left_key = 21 + 12;
+        right_key = 108 - 12;
+    }
+    if matches.is_present("A88") {
+        left_key = 21;
+        right_key = 108;
+    }
 
     let keyboard = KeyboardBuilder::new()
                         .set_width(width as u16)?
-                        .set_most_left_right_white_keys(24,35)?
+                        .set_most_left_right_white_keys(left_key,right_key)?
                         .build2d();
 
     let height = keyboard.height as u32;

@@ -16,3 +16,4 @@ documentation = "https://docs.rs/releases/search?query=piano_keyboard"
 
 [dev-dependencies]
 png = "0.14.0"
+clap = "2.32"

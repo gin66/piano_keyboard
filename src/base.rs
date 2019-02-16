@@ -104,6 +104,11 @@ impl Base {
 
         base.kb_width_min = (kb.black_key_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
 
+        if base.key_gap_min == 0 {
+            base.key_gap_min = 1;
+            base.kw_width_min -= 1;
+        }
+
         // If the above remainders sum up to more than 1, then kw_width_min should be increased
         if base.nr_of_white_keys * (base.kw_width_min + 1) + (base.nr_of_white_keys + 1) * base.key_gap_min <= base.width {
             base.kw_width_min += 1;
