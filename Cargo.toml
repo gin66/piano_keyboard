@@ -1,6 +1,6 @@
 [package]
 name = "piano_keyboard"
-version = "0.1.2"
+version = "0.2.1"
 authors = ["Jochen Kiemes <jochen@kiemes.de>"]
 edition = "2018"
 license = "MIT"
