@@ -1,19 +1,19 @@
-use crate::KeyboardBuilder;
-use crate::Base;
 use crate::base::*;
+use crate::Base;
+use crate::KeyboardBuilder;
 
 #[derive(Debug)]
 pub enum TopResultElement {
-    WhiteGapBlack(u16,u16,u16),
-    BlindWhiteGapBlack(u16,u16,u16,u16),
-    BlindWhite(u16,u16),
+    WhiteGapBlack(u16, u16, u16),
+    BlindWhiteGapBlack(u16, u16, u16, u16),
+    BlindWhite(u16, u16),
 }
 
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct Top {
     kb_width_min: u16,
-    cde_pars: [u16;5],
-    fgab_pars: [u16;7],
+    cde_pars: [u16; 5],
+    fgab_pars: [u16; 7],
     cde_gap: u16,
     fgab_gap: u16,
 
@@ -56,13 +56,14 @@ impl Top {
         //
         // In order to have same size white keys, multiple of three should be ensured.
 
-        top.cde_black_key_width = match (top.cde_width - 2*top.kb_width_min - 4*top.cde_gap) % 3 {
+        top.cde_black_key_width = match (top.cde_width - 2 * top.kb_width_min - 4 * top.cde_gap) % 3
+        {
             0 => top.kb_width_min,
             1 => top.kb_width_min + 2,
             2 => top.kb_width_min + 1,
             _ => panic!("cannot happen"),
         };
-        top.cde_key_width = (top.cde_width - 2*top.cde_black_key_width - 4*top.cde_gap)/3;
+        top.cde_key_width = (top.cde_width - 2 * top.cde_black_key_width - 4 * top.cde_gap) / 3;
 
         // fgab-part
         // This contains three black keys and six gaps (optionally).
@@ -72,44 +73,62 @@ impl Top {
 
         top.black_fs_as_width = top.cde_black_key_width;
         top.black_gs_width = match (top.fgab_width % 2 == 0, top.cde_black_key_width % 2 == 0) {
-            (true,true) => top.cde_black_key_width,
-            (true,false) => top.cde_black_key_width+1,
-            (false,true) => top.cde_black_key_width+1,
-            (false,false) => top.cde_black_key_width,
+            (true, true) => top.cde_black_key_width,
+            (true, false) => top.cde_black_key_width + 1,
+            (false, true) => top.cde_black_key_width + 1,
+            (false, false) => top.cde_black_key_width,
         };
-        let fgab_white_width = top.fgab_width - 2*top.black_fs_as_width - top.black_gs_width - 6 * top.fgab_gap;
+        let fgab_white_width =
+            top.fgab_width - 2 * top.black_fs_as_width - top.black_gs_width - 6 * top.fgab_gap;
 
         assert!(fgab_white_width % 2 == 0);
 
         // The distribution of width on the pairs g/a and f/b should be according to the um
         // In case fgab_width is not multiple of two, then f/b should be smaller than g/a
         let ga_white_width = ((fgab_white_width as u32 * kb.white_key_small_width_ga_10um as u32)
-                                    / (kb.white_key_small_width_ga_10um + kb.white_key_small_width_fb_10um) as u32) as u16;
+            / (kb.white_key_small_width_ga_10um + kb.white_key_small_width_fb_10um) as u32)
+            as u16;
         let fb_white_width = ((fgab_white_width as u32 * kb.white_key_small_width_fb_10um as u32)
-                                    / (kb.white_key_small_width_ga_10um + kb.white_key_small_width_fb_10um) as u32) as u16;
-        let (ga_white_width, fb_white_width) = match (fgab_white_width - (ga_white_width + fb_white_width),fb_white_width % 2 == 0) {
-            (0,true) => (ga_white_width,fb_white_width),
-            (1,true) => (ga_white_width+1,fb_white_width),
-            (2,true) => (ga_white_width+2,fb_white_width),
-            (3,true) => (ga_white_width+1,fb_white_width+2),
-            (0,false) => (ga_white_width+1,fb_white_width-1),
-            (1,false) => (ga_white_width,fb_white_width+1),
-            (2,false) => (ga_white_width+1,fb_white_width+1),
-            (3,false) => (ga_white_width+2,fb_white_width+1),
-            _ => panic!("Should not happen")
+            / (kb.white_key_small_width_ga_10um + kb.white_key_small_width_fb_10um) as u32)
+            as u16;
+        let (ga_white_width, fb_white_width) = match (
+            fgab_white_width - (ga_white_width + fb_white_width),
+            fb_white_width % 2 == 0,
+        ) {
+            (0, true) => (ga_white_width, fb_white_width),
+            (1, true) => (ga_white_width + 1, fb_white_width),
+            (2, true) => (ga_white_width + 2, fb_white_width),
+            (3, true) => (ga_white_width + 1, fb_white_width + 2),
+            (0, false) => (ga_white_width + 1, fb_white_width - 1),
+            (1, false) => (ga_white_width, fb_white_width + 1),
+            (2, false) => (ga_white_width + 1, fb_white_width + 1),
+            (3, false) => (ga_white_width + 2, fb_white_width + 1),
+            _ => panic!("Should not happen"),
         };
 
         top.ga_white_width = ga_white_width;
         top.fb_white_width = fb_white_width;
 
-        top.d_left_blind_width = top.cde_key_width + 2*top.cde_gap + top.cde_black_key_width - top.cde_pars[0..=1].iter().sum::<u16>();
-        top.e_left_blind_width = 2*top.cde_key_width + 4*top.cde_gap + 2*top.cde_black_key_width - top.cde_pars[0..=3].iter().sum::<u16>();
+        top.d_left_blind_width = top.cde_key_width + 2 * top.cde_gap + top.cde_black_key_width
+            - top.cde_pars[0..=1].iter().sum::<u16>();
+        top.e_left_blind_width =
+            2 * top.cde_key_width + 4 * top.cde_gap + 2 * top.cde_black_key_width
+                - top.cde_pars[0..=3].iter().sum::<u16>();
 
-        top.g_left_blind_width = top.fb_white_width/2 + 2*top.fgab_gap + top.black_fs_as_width - top.fgab_pars[0..=1].iter().sum::<u16>();
-        top.a_left_blind_width = top.fb_white_width/2 + 4*top.fgab_gap + top.black_fs_as_width
-                                + top.ga_white_width/2 + top.black_gs_width - top.fgab_pars[0..=3].iter().sum::<u16>();
-        top.b_left_blind_width = top.fb_white_width/2 + 6*top.fgab_gap + 2*top.black_fs_as_width
-                                + top.ga_white_width + top.black_gs_width - top.fgab_pars[0..=5].iter().sum::<u16>();
+        top.g_left_blind_width = top.fb_white_width / 2 + 2 * top.fgab_gap + top.black_fs_as_width
+            - top.fgab_pars[0..=1].iter().sum::<u16>();
+        top.a_left_blind_width = top.fb_white_width / 2
+            + 4 * top.fgab_gap
+            + top.black_fs_as_width
+            + top.ga_white_width / 2
+            + top.black_gs_width
+            - top.fgab_pars[0..=3].iter().sum::<u16>();
+        top.b_left_blind_width = top.fb_white_width / 2
+            + 6 * top.fgab_gap
+            + 2 * top.black_fs_as_width
+            + top.ga_white_width
+            + top.black_gs_width
+            - top.fgab_pars[0..=5].iter().sum::<u16>();
 
         top
     }
@@ -119,7 +138,7 @@ impl Top {
     pub fn get_top_for(&self, el: &ResultElement) -> TopResultElement {
         use crate::TopResultElement::*;
         match el {
-            ResultElement::Key(width,key) => {
+            ResultElement::Key(width, key) => {
                 // The correction is needed for alternating key d size
                 let corr = match key % 12 {
                     KEY_C => width - self.cde_pars[0],
@@ -129,21 +148,43 @@ impl Top {
                     KEY_G => width - self.fgab_pars[2],
                     KEY_A => width - self.fgab_pars[4],
                     KEY_B => width - self.fgab_pars[6],
-                    _ => 0
+                    _ => 0,
                 };
                 match key % 12 {
-                    KEY_C => WhiteGapBlack(self.cde_key_width+corr,self.cde_gap,self.cde_black_key_width),
-                    KEY_D => BlindWhiteGapBlack(self.d_left_blind_width,self.cde_key_width+corr,self.cde_gap,self.cde_black_key_width),
-                    KEY_E => BlindWhite(self.e_left_blind_width,self.cde_key_width+corr),
-                    KEY_F => WhiteGapBlack(self.fb_white_width/2+corr,self.fgab_gap,self.black_fs_as_width),
-                    KEY_G => BlindWhiteGapBlack(self.g_left_blind_width,self.ga_white_width/2+corr,self.cde_gap,self.black_gs_width),
-                    KEY_A => BlindWhiteGapBlack(self.a_left_blind_width,self.ga_white_width/2+corr,self.cde_gap,self.black_fs_as_width),
-                    KEY_B => BlindWhite(self.b_left_blind_width,self.fb_white_width/2+corr),
-                    _ => panic!("Should not happen")
+                    KEY_C => WhiteGapBlack(
+                        self.cde_key_width + corr,
+                        self.cde_gap,
+                        self.cde_black_key_width,
+                    ),
+                    KEY_D => BlindWhiteGapBlack(
+                        self.d_left_blind_width,
+                        self.cde_key_width + corr,
+                        self.cde_gap,
+                        self.cde_black_key_width,
+                    ),
+                    KEY_E => BlindWhite(self.e_left_blind_width, self.cde_key_width + corr),
+                    KEY_F => WhiteGapBlack(
+                        self.fb_white_width / 2 + corr,
+                        self.fgab_gap,
+                        self.black_fs_as_width,
+                    ),
+                    KEY_G => BlindWhiteGapBlack(
+                        self.g_left_blind_width,
+                        self.ga_white_width / 2 + corr,
+                        self.cde_gap,
+                        self.black_gs_width,
+                    ),
+                    KEY_A => BlindWhiteGapBlack(
+                        self.a_left_blind_width,
+                        self.ga_white_width / 2 + corr,
+                        self.cde_gap,
+                        self.black_fs_as_width,
+                    ),
+                    KEY_B => BlindWhite(self.b_left_blind_width, self.fb_white_width / 2 + corr),
+                    _ => panic!("Should not happen"),
                 }
-            },
-            ResultElement::Gap(_) => panic!("Do not call with Gap")
+            }
+            ResultElement::Gap(_) => panic!("Do not call with Gap"),
         }
     }
 }
-

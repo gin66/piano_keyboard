@@ -1,12 +1,15 @@
 # Piano_Keyboard
 
-This crate provides the graphical elements in order to draw a piano keyboard
-with close to realistic appearance.
+[![Build Status](https://travis-ci.org/gin66/piano_keyboard.svg?branch=master)](https://travis-ci.org/gin66/piano_keyboard)
 
-As reference has been used internet resource displaying an
-[octave drawing](http://www.rwgiangiulio.com/construction/manual/layout.jpg).
-The dimensions described there have been used to create the elements of
-a piano keyboard, which can be used to create for example an octave like this:
+This crate provides the graphical elements in order to draw a piano keyboard
+with close to realistic, pixel accurate appearance.
+
+Reference for the dimension is this internet image:
+![octave drawing](http://www.rwgiangiulio.com/construction/manual/layout.jpg)
+
+The dimensions described have been used to create the elements of
+a piano keyboard like for an octave like this:
 ![img](keyboard.png)
 
 It is visible, that between white keys and even between white and black keys a gap
@@ -20,6 +23,9 @@ Pixel accurate has the consequence, that in order to fill the requested width,
 any gaps, white or black keys may need to be modified by up to one pixel.
 Those changes may or may not be visible. If no adjustments have been made for
 a given width and key range is reported by the function is_perfect()
+
+If the enlargement of various elements does not succeed, then as last resort
+technique the outter gaps are enlarged.
 
 The gap between white and black keys can be removed by an option of the KeyboardBuilder.
 

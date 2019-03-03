@@ -1,6 +1,5 @@
 ///! Base builder dealing only with white keys and key gaps between white keys.
 ///
-
 use crate::KeyboardBuilder;
 
 pub const KEY_C: u8 = 0;
@@ -18,7 +17,7 @@ pub const KEY_B: u8 = 11;
 
 #[derive(Debug)]
 pub enum ResultElement {
-    Key(u16,u8),
+    Key(u16, u8),
     Gap(u16),
 }
 
@@ -35,8 +34,8 @@ enum Element {
     EnlargedOutterLeftKey(u8),
     EnlargedOutterRightKey(u8),
 }
-  
-#[derive(Default,Debug)]
+
+#[derive(Default, Debug)]
 pub struct Base {
     width: u16,
     nr_of_white_keys: u16,
@@ -86,23 +85,26 @@ impl Base {
         base.width = kb.width;
 
         // Derive key gap measure from the given dimensions
-        let key_gap_10um = kb.white_key_height_10um - kb.black_key_height_10um
-                                                  - kb.white_key_wide_height_10um;
+        let key_gap_10um =
+            kb.white_key_height_10um - kb.black_key_height_10um - kb.white_key_wide_height_10um;
 
         base.nr_of_white_keys = (kb.left_white_key..=kb.right_white_key)
-                                .filter(|k| KeyboardBuilder::is_white(*k))
-                                .count() as u16;
+            .filter(|k| KeyboardBuilder::is_white(*k))
+            .count() as u16;
 
         // Calculate the total keyboard width.
         // Left and right from the outer keys have a gap, too
         let keyboard_width_10um = (kb.white_key_wide_width_10um + key_gap_10um)
-                                    * base.nr_of_white_keys as u32 + key_gap_10um;
+            * base.nr_of_white_keys as u32
+            + key_gap_10um;
 
         // Calculate the lower values for key gap and white key
         base.key_gap_min = (key_gap_10um * kb.width as u32 / keyboard_width_10um) as u16;
-        base.kw_width_min = (kb.white_key_wide_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
+        base.kw_width_min =
+            (kb.white_key_wide_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
 
-        base.kb_width_min = (kb.black_key_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
+        base.kb_width_min =
+            (kb.black_key_width_10um * kb.width as u32 / keyboard_width_10um) as u16;
 
         if base.key_gap_min == 0 {
             base.key_gap_min = 1;
@@ -110,14 +112,18 @@ impl Base {
         }
 
         // If the above remainders sum up to more than 1, then kw_width_min should be increased
-        if base.nr_of_white_keys * (base.kw_width_min + 1) + (base.nr_of_white_keys + 1) * base.key_gap_min <= base.width {
+        if base.nr_of_white_keys * (base.kw_width_min + 1)
+            + (base.nr_of_white_keys + 1) * base.key_gap_min
+            <= base.width
+        {
             base.kw_width_min += 1;
         }
 
         // Calculate the minimum and maximum widths based on key_gap/kw_width and variations +0/1
-        let min_width = base.nr_of_white_keys * base.kw_width_min + (base.nr_of_white_keys + 1) * base.key_gap_min;
-        let max_width = base.nr_of_white_keys * (base.kw_width_min + 1) + (base.nr_of_white_keys + 1) * base.key_gap_min;
-
+        let min_width = base.nr_of_white_keys * base.kw_width_min
+            + (base.nr_of_white_keys + 1) * base.key_gap_min;
+        let max_width = base.nr_of_white_keys * (base.kw_width_min + 1)
+            + (base.nr_of_white_keys + 1) * base.key_gap_min;
 
         // Ensure proper result
         assert!(min_width <= kb.width);
@@ -183,7 +189,7 @@ impl Base {
                         base.nr_of_full_octaves += 1;
                     }
                 }
-                _ => ()
+                _ => (),
             }
         }
 
@@ -192,9 +198,10 @@ impl Base {
         base
     }
 
-    fn current_width(&self) -> (u16,u16) {
+    fn current_width(&self) -> (u16, u16) {
         // Accumulate width of all elements and return result
-        let w = self.elements
+        let w = self
+            .elements
             .iter()
             .map(|e| match e {
                 Element::IdenticalWhite(_) => self.identical_key,
@@ -212,14 +219,13 @@ impl Base {
         if w > self.width {
             panic!("calculated width should not be bigger than given width");
         }
-        (w,self.width - w)
+        (w, self.width - w)
     }
 
     fn find_solution(&mut self) {
         let mut last_delta = 0;
         loop {
-            let (_current,delta) = self.current_width();
-            println!("{}/{}",delta,self.nr_of_white_keys);
+            let (_current, delta) = self.current_width();
 
             if delta == 0 {
                 return; // solution already found
@@ -227,12 +233,15 @@ impl Base {
 
             // Avoid endless loop
             if delta == last_delta {
-                panic!("{:?}\n\n=================\nno solution. remaining delta {}\n=================",self,delta);
+                panic!(
+                    "{:?}\n\n=================\nno solution. remaining delta {}\n=================",
+                    self, delta
+                );
             }
             last_delta = delta;
 
             // If delta equals number of white_keys+1, then increase gap
-            if delta == self.nr_of_white_keys+1 {
+            if delta == self.nr_of_white_keys + 1 {
                 self.identical_gap += 1;
                 continue;
             }
@@ -245,12 +254,12 @@ impl Base {
 
             // If increasing the gap is multiple of cde or fgab groups + 0..4,
             // then increase gap
-            if delta >= self.nr_of_white_keys+1 {
+            if delta >= self.nr_of_white_keys + 1 {
                 let rem = delta - self.nr_of_white_keys - 1;
                 if rem % self.nr_of_cde <= 4 || rem % self.nr_of_fgab <= 4 {
                     self.identical_gap += 1;
                     continue;
-                } 
+                }
             }
 
             // If increasing the white keys leads to multiple of cde or fgab groups,
@@ -260,13 +269,15 @@ impl Base {
                 if rem % self.nr_of_cde <= 4 || rem % self.nr_of_fgab <= 4 {
                     self.identical_key += 1;
                     continue;
-                } 
+                }
             }
 
             // Try to make use of enlarged keys FGAB
-            if delta >= self.nr_of_f+self.nr_of_g+self.nr_of_a+self.nr_of_b && !self.fgab_keys_enlarged {
+            if delta >= self.nr_of_f + self.nr_of_g + self.nr_of_a + self.nr_of_b
+                && !self.fgab_keys_enlarged
+            {
                 self.fgab_keys_enlarged = true;
-                for i in 1..self.elements.len()-1 {
+                for i in 1..self.elements.len() - 1 {
                     let key = match self.elements[i] {
                         Element::IdenticalWhite(key) => {
                             let kc = key % 12;
@@ -275,7 +286,7 @@ impl Base {
                             }
                             key
                         }
-                        _ => continue
+                        _ => continue,
                     };
                     self.width_fgab = self.identical_key + 1;
                     self.elements[i] = Element::KeyFGAB(key)
@@ -284,9 +295,9 @@ impl Base {
             }
 
             // Try to make use of enlarged keys CDE
-            if delta >= self.nr_of_c+self.nr_of_d+self.nr_of_e && !self.cde_keys_enlarged {
+            if delta >= self.nr_of_c + self.nr_of_d + self.nr_of_e && !self.cde_keys_enlarged {
                 self.cde_keys_enlarged = true;
-                for i in 1..self.elements.len()-1 {
+                for i in 1..self.elements.len() - 1 {
                     let key = match self.elements[i] {
                         Element::IdenticalWhite(key) => {
                             let kc = key % 12;
@@ -295,7 +306,7 @@ impl Base {
                             }
                             key
                         }
-                        _ => continue
+                        _ => continue,
                     };
                     self.width_cde = self.identical_key + 1;
                     self.elements[i] = Element::KeyCDE(key)
@@ -304,19 +315,20 @@ impl Base {
             }
 
             // Try to make use of enlarged gap between b and c
-            if delta >= self.nr_of_bc_gaps && !self.bc_gaps_enlarged {
+            if delta >= self.nr_of_bc_gaps && !self.bc_gaps_enlarged && self.nr_of_bc_gaps > 1 {
                 self.bc_gaps_enlarged = true;
-                for i in 3..self.elements.len()-1 {
+                for i in 3..self.elements.len() - 1 {
                     match self.elements[i] {
-                        Element::IdenticalWhite(key) => {
+                        Element::KeyCDE(key) | Element::IdenticalWhite(key) => {
                             if key % 12 != KEY_C {
+                                println!("{}", key);
                                 continue;
                             }
                         }
-                        _ => continue
+                        _ => continue,
                     }
                     self.gap_bc = self.identical_gap + 1;
-                    self.elements[i-1] = Element::GapBC
+                    self.elements[i - 1] = Element::GapBC
                 }
                 continue;
             }
@@ -324,18 +336,17 @@ impl Base {
             // Try to make use of enlarged gap between e and f
             if delta >= self.nr_of_ef_gaps && !self.ef_gaps_enlarged {
                 self.ef_gaps_enlarged = true;
-                for i in 3..self.elements.len()-1 {
+                for i in 3..self.elements.len() - 1 {
                     match self.elements[i] {
-                        Element::IdenticalWhite(key)
-                        | Element::KeyFGAB(key) => {
+                        Element::IdenticalWhite(key) | Element::KeyFGAB(key) => {
                             if key % 12 != KEY_F {
                                 continue;
                             }
                         }
-                        _ => continue
+                        _ => continue,
                     }
                     self.gap_ef = self.identical_gap + 1;
-                    self.elements[i-1] = Element::GapEF
+                    self.elements[i - 1] = Element::GapEF
                 }
                 continue;
             }
@@ -343,16 +354,15 @@ impl Base {
             // Try to make use of enlarged key D
             if delta >= self.nr_of_d && !self.d_key_enlarged && !self.alternating_d_key_enlarged {
                 self.d_key_enlarged = true;
-                for i in 3..self.elements.len()-1 {
+                for i in 3..self.elements.len() - 1 {
                     let key = match self.elements[i] {
-                        Element::IdenticalWhite(key)
-                        | Element::KeyCDE(key) => {
+                        Element::IdenticalWhite(key) | Element::KeyCDE(key) => {
                             if key % 12 != KEY_D {
                                 continue;
                             }
                             key
                         }
-                        _ => continue
+                        _ => continue,
                     };
                     self.elements[i] = Element::KeyD(key)
                 }
@@ -371,7 +381,7 @@ impl Base {
                 self.elements[0] = Element::OutterGap;
                 if delta % 2 == 0 {
                     let n = self.elements.len();
-                    self.elements[n-1] = Element::OutterGap;
+                    self.elements[n - 1] = Element::OutterGap;
                 }
                 self.outter_gaps = self.identical_gap + 1;
                 continue;
@@ -385,52 +395,52 @@ impl Base {
                     Element::IdenticalWhite(key) => {
                         self.outter_left_key = self.identical_key + 1;
                         Element::EnlargedOutterLeftKey(key)
-                    },
+                    }
                     Element::KeyCDE(key) => {
                         self.outter_left_key = self.width_cde + 1;
                         Element::EnlargedOutterLeftKey(key)
-                    },
+                    }
                     Element::KeyFGAB(key) => {
                         self.outter_left_key = self.width_fgab + 1;
                         Element::EnlargedOutterLeftKey(key)
-                    },
+                    }
                     Element::EnlargedOutterLeftKey(key) => {
                         self.outter_left_key += 1;
                         Element::EnlargedOutterLeftKey(key)
-                    },
-                    ref el => panic!("Should not happen: {:?}",el)
+                    }
+                    ref el => panic!("Should not happen: {:?}", el),
                 };
                 let n = self.elements.len();
-                self.elements[n-2] = match self.elements[n-2] {
+                self.elements[n - 2] = match self.elements[n - 2] {
                     Element::IdenticalWhite(key) => {
                         self.outter_right_key = self.identical_key + 1;
                         Element::EnlargedOutterRightKey(key)
-                    },
+                    }
                     Element::KeyCDE(key) => {
                         self.outter_right_key = self.width_cde + 1;
                         Element::EnlargedOutterRightKey(key)
-                    },
+                    }
                     Element::KeyFGAB(key) => {
                         self.outter_right_key = self.width_fgab + 1;
                         Element::EnlargedOutterRightKey(key)
-                    },
+                    }
                     Element::EnlargedOutterRightKey(key) => {
                         self.outter_right_key += 1;
                         Element::EnlargedOutterRightKey(key)
-                    },
-                    ref el => panic!("Should not happen: {:?}",el)
+                    }
+                    ref el => panic!("Should not happen: {:?}", el),
                 };
                 continue;
             }
 
             // Try to make use of alternating enlarged key D
-            if delta >= self.nr_of_d/2 && !self.d_key_enlarged && !self.alternating_d_key_enlarged {
+            if delta >= self.nr_of_d / 2 && !self.d_key_enlarged && !self.alternating_d_key_enlarged
+            {
                 self.alternating_d_key_enlarged = true;
-                let mut enlarge = delta == self.nr_of_d/2;
-                for i in 3..self.elements.len()-1 {
+                let mut enlarge = delta == self.nr_of_d / 2;
+                for i in 3..self.elements.len() - 1 {
                     let key = match self.elements[i] {
-                        Element::IdenticalWhite(key)
-                        | Element::KeyCDE(key) => {
+                        Element::IdenticalWhite(key) | Element::KeyCDE(key) => {
                             if key % 12 != KEY_D {
                                 continue;
                             }
@@ -440,7 +450,7 @@ impl Base {
                             }
                             key
                         }
-                        _ => continue
+                        _ => continue,
                     };
                     self.elements[i] = Element::KeyD(key)
                 }
@@ -452,44 +462,85 @@ impl Base {
                 continue;
             }
 
+            // Use last resort technique by increasing outter gaps and key
+            if self.outter_left_key != self.outter_right_key {
+                let common = self.outter_left_key.min(self.outter_right_key);
+                self.outter_left_key = common;
+                self.outter_right_key = common;
+                self.outter_gaps += 1;
+            } else {
+                self.outter_left_key += 1;
+            }
         }
     }
     pub fn is_perfect(&self) -> bool {
-        !self.d_key_enlarged && !self.alternating_d_key_enlarged && !self.end_keys_enlarged
-                                           && !self.cde_keys_enlarged && !self.fgab_keys_enlarged
+        !self.d_key_enlarged
+            && !self.alternating_d_key_enlarged
+            && !self.end_keys_enlarged
+            && !self.cde_keys_enlarged
+            && !self.fgab_keys_enlarged
     }
     pub fn get_elements(&self) -> Vec<ResultElement> {
-        self.elements.iter()
+        self.elements
+            .iter()
             .map(|e| match e {
-                Element::IdenticalWhite(key) => ResultElement::Key(self.identical_key,*key),
+                Element::IdenticalWhite(key) => ResultElement::Key(self.identical_key, *key),
                 Element::IdenticalGap => ResultElement::Gap(self.identical_gap),
                 Element::GapBC => ResultElement::Gap(self.gap_bc),
                 Element::GapEF => ResultElement::Gap(self.gap_ef),
-                Element::KeyD(key) => ResultElement::Key(self.width_d,*key),
-                Element::KeyCDE(key) => ResultElement::Key(self.width_cde,*key),
-                Element::KeyFGAB(key) => ResultElement::Key(self.width_fgab,*key),
+                Element::KeyD(key) => ResultElement::Key(self.width_d, *key),
+                Element::KeyCDE(key) => ResultElement::Key(self.width_cde, *key),
+                Element::KeyFGAB(key) => ResultElement::Key(self.width_fgab, *key),
                 Element::OutterGap => ResultElement::Gap(self.outter_gaps),
-                Element::EnlargedOutterLeftKey(key) => ResultElement::Key(self.outter_left_key,*key),
-                Element::EnlargedOutterRightKey(key) => ResultElement::Key(self.outter_right_key,*key),
+                Element::EnlargedOutterLeftKey(key) => {
+                    ResultElement::Key(self.outter_left_key, *key)
+                }
+                Element::EnlargedOutterRightKey(key) => {
+                    ResultElement::Key(self.outter_right_key, *key)
+                }
             })
             .collect::<Vec<_>>()
     }
-    pub fn get_cde_pars(&self) -> [u16;5] {
+    pub fn get_cde_pars(&self) -> [u16; 5] {
         // Gaps between cd and de are not enlarged.
-        match (self.cde_keys_enlarged,self.d_key_enlarged) {
-            (true,true) => [self.width_cde,self.identical_gap,self.width_d,self.identical_gap,self.width_cde],
-            (true,false) => [self.width_cde,self.identical_gap,self.width_cde,self.identical_gap,self.width_cde],
-            (false,true) => [self.identical_key,self.identical_gap,self.width_d,self.identical_gap,self.identical_key],
-            (false,false) => [self.identical_key,self.identical_gap,self.identical_key,self.identical_gap,self.identical_key],
+        match (self.cde_keys_enlarged, self.d_key_enlarged) {
+            (true, true) => [
+                self.width_cde,
+                self.identical_gap,
+                self.width_d,
+                self.identical_gap,
+                self.width_cde,
+            ],
+            (true, false) => [
+                self.width_cde,
+                self.identical_gap,
+                self.width_cde,
+                self.identical_gap,
+                self.width_cde,
+            ],
+            (false, true) => [
+                self.identical_key,
+                self.identical_gap,
+                self.width_d,
+                self.identical_gap,
+                self.identical_key,
+            ],
+            (false, false) => [
+                self.identical_key,
+                self.identical_gap,
+                self.identical_key,
+                self.identical_gap,
+                self.identical_key,
+            ],
         }
     }
-    pub fn get_fgab_pars(&self) -> [u16;7] {
+    pub fn get_fgab_pars(&self) -> [u16; 7] {
         let gap = self.identical_gap;
         let width = match self.fgab_keys_enlarged {
             true => self.width_fgab,
             false => self.identical_key,
         };
-        [width,gap,width,gap,width,gap,width]
+        [width, gap, width, gap, width, gap, width]
     }
     pub fn get_black_key_min_width(&self) -> u16 {
         self.kb_width_min
@@ -501,4 +552,3 @@ impl Base {
         self.identical_gap
     }
 }
-

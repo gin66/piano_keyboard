@@ -1,12 +1,15 @@
 //! # Piano_Keyboard
 //!
-//! This crate provides the graphical elements in order to draw a piano keyboard
-//! with close to realistic appearance.
+//! [![Build Status](https://travis-ci.org/gin66/piano_keyboard.svg?branch=master)](https://travis-ci.org/gin66/piano_keyboard)
 //!
-//! As reference has been used internet resource displaying an
-//! [octave drawing](http://www.rwgiangiulio.com/construction/manual/layout.jpg).
-//! The dimensions described there have been used to create the elements of
-//! a piano keyboard, which can be used to create for example an octave like this:
+//! This crate provides the graphical elements in order to draw a piano keyboard
+//! with close to realistic, pixel accurate appearance.
+//!
+//! Reference for the dimension is this internet image:
+//! ![octave drawing](http://www.rwgiangiulio.com/construction/manual/layout.jpg)
+//! 
+//! The dimensions described have been used to create the elements of
+//! a piano keyboard like for an octave like this:
 //! ![img](file:../../../keyboard.png)
 //!
 //! It is visible, that between white keys and even between white and black keys a gap
@@ -21,8 +24,11 @@
 //! Those changes may or may not be visible. If no adjustments have been made for
 //! a given width and key range is reported by the function is_perfect()
 //!
+//! If the enlargement of various elements does not succeed, then as last resort
+//! technique the outter gaps are enlarged.
+//!
 //! The gap between white and black keys can be removed by an option of the KeyboardBuilder.
-//! 
+//!
 //! The interface is prepared to be compatible for an extension towards a 3d keyboard.
 //! That's why the returned keyboard is called Keyboard2D and the related build function
 //! is called build2d().
@@ -30,7 +36,7 @@
 mod base;
 mod top;
 use crate::base::Base;
-use crate::top::{Top,TopResultElement};
+use crate::top::{Top, TopResultElement};
 
 /// This is just another rectangle definition.
 ///
@@ -53,7 +59,7 @@ pub enum Element {
     WhiteKey {
         wide: Rectangle,
         small: Rectangle,
-        blind: Option<Rectangle>
+        blind: Option<Rectangle>,
     },
     /// A black key consists of only one rectangle
     BlackKey(Rectangle),
@@ -66,7 +72,7 @@ pub struct Keyboard2d {
     pub width: u16,
     pub height: u16,
     perfect: bool,
-    elements: Vec<Element>
+    elements: Vec<Element>,
 }
 impl Keyboard2d {
     /// This function is the preferred way to iterate through all elements.
@@ -81,11 +87,11 @@ impl Keyboard2d {
         let mut rects = vec![];
         for opt_element in self.elements.iter() {
             match opt_element {
-                Element::WhiteKey { 
-                        wide: r1,
-                        small: r2,
-                        blind: opt_blind,
-                }=> {
+                Element::WhiteKey {
+                    wide: r1,
+                    small: r2,
+                    blind: opt_blind,
+                } => {
                     rects.push(r1.clone());
                     rects.push(r2.clone());
                     if blind_as_white {
@@ -93,8 +99,8 @@ impl Keyboard2d {
                             rects.push(blind.clone());
                         }
                     }
-                },
-                _ => ()
+                }
+                _ => (),
             }
         }
         rects
@@ -106,8 +112,8 @@ impl Keyboard2d {
             match opt_element {
                 Element::BlackKey(r) => {
                     rects.push(r.clone());
-                },
-                _ => ()
+                }
+                _ => (),
             }
         }
         rects
@@ -162,47 +168,66 @@ impl KeyboardBuilder {
             white_key_wide_height_10um: 45_00,
         }
     }
+    /// Define a standard piano with 25/37/49/61/64/73/76 or 88 keys.
+    pub fn standard_piano(mut self, nr_of_keys: u8) -> Result<KeyboardBuilder, String> {
+        let (left, right) = match nr_of_keys {
+            88 => (21, 108),
+            76 => (21, 108 - 12),          // one octave less from top
+            73 => (21 + 3, 108 - 12),      // remove bottom a,a#,b
+            64 => (21 + 12, 108 - 12),     // rd-64: covers full piano with one octave up/down
+            61 => (21 + 12 + 3, 108 - 12), // remove bottom a,a#,b
+            49 => (21 + 12 + 3, 108 - 24), // one octave less from top
+            37 => (21 + 24 + 3, 108 - 24), // one octave less from bottom
+            25 => (21 + 24 + 3, 108 - 36), // one octave less from top
+            _ => {
+                return Err(format!(
+                    "size {} not a recognized standard size",
+                    nr_of_keys
+                ))
+            }
+        };
+        assert_eq!(right - left + 1, nr_of_keys);
+        self.left_white_key = left;
+        self.right_white_key = right;
+        Ok(self)
+    }
     pub fn is_rd64(mut self) -> KeyboardBuilder {
         // RD-64 is A1 to C7
-        self.left_white_key = 21+12;
-        self.right_white_key = 108-12;
+        self.left_white_key = 21 + 12;
+        self.right_white_key = 108 - 12;
         self
     }
     /// The keys are defined by MIDI key codes.
     /// This means the values have to be in range 0..128, with 0 representing C_-1.
     /// Thus the default 88 keyboard uses key codes 21 (A_0) to 108 (C_8).
-    pub fn set_most_left_right_white_keys(mut self,
-                  left_white_key: u8, right_white_key: u8) -> Result<KeyboardBuilder,String> {
-        if left_white_key > right_white_key{
+    pub fn set_most_left_right_white_keys(
+        mut self,
+        left_white_key: u8,
+        right_white_key: u8,
+    ) -> Result<KeyboardBuilder, String> {
+        if left_white_key > right_white_key {
             Err("left white key right from right white key ".to_string())
-        }
-        else if left_white_key > 127 {
+        } else if left_white_key > 127 {
             Err("left white key is out of range".to_string())
-        }
-        else if right_white_key > 127 {
+        } else if right_white_key > 127 {
             Err("right white key is out of range".to_string())
-        }
-        else if right_white_key - left_white_key < 11 {
+        } else if right_white_key - left_white_key < 11 {
             Err("Keyboard must be at least one octave".to_string())
-        }
-        else if !KeyboardBuilder::is_white(left_white_key) {
+        } else if !KeyboardBuilder::is_white(left_white_key) {
             Err("left white key is not a white key".to_string())
-        }
-        else if !KeyboardBuilder::is_white(right_white_key) {
+        } else if !KeyboardBuilder::is_white(right_white_key) {
             Err("right white key is not a white key".to_string())
-        }
-        else {
+        } else {
             self.left_white_key = left_white_key;
             self.right_white_key = right_white_key;
             Ok(self)
         }
     }
     /// Sets the desired keyboard width in pixels.
-    pub fn set_width(mut self, width: u16) -> Result<KeyboardBuilder,String> {
-        if width > 65535-127 {
+    pub fn set_width(mut self, width: u16) -> Result<KeyboardBuilder, String> {
+        if width > 65535 - 127 {
             Err("Requested width too big".to_string())
-        }
-        else {
+        } else {
             self.width = width;
             Ok(self)
         }
@@ -221,9 +246,6 @@ impl KeyboardBuilder {
     /// Final build the keyboard, which means to perform all calculations and
     /// create all the elements.
     ///
-    /// Warning: For some value combinations, the strategies in base.rs find_solution() may not
-    /// be successful and thus a panic will occur.
-    ///
     /// TODO: Create a fallback solution (cargo run --example make_png -- --width 810).
     pub fn build2d(self) -> Keyboard2d {
         let base = Base::calculate(&self);
@@ -232,48 +254,45 @@ impl KeyboardBuilder {
         let base_elements = base.get_elements();
 
         let nr_of_white_keys = (self.left_white_key..=self.right_white_key)
-                                .filter(|k| KeyboardBuilder::is_white(*k))
-                                .count() as u16;
+            .filter(|k| KeyboardBuilder::is_white(*k))
+            .count() as u16;
 
-        let key_gap_10um = self.white_key_height_10um - self.black_key_height_10um
-                                                  - self.white_key_wide_height_10um;
+        let key_gap_10um = self.white_key_height_10um
+            - self.black_key_height_10um
+            - self.white_key_wide_height_10um;
 
         // left and right from the outer keys have a gap, too
         let keyboard_width_10um = (self.white_key_wide_width_10um + key_gap_10um)
-                                    * nr_of_white_keys as u32 + key_gap_10um;
+            * nr_of_white_keys as u32
+            + key_gap_10um;
 
-        let key_gap = ((self.width as u32 * key_gap_10um + keyboard_width_10um/2)
-                                                / keyboard_width_10um) as u16;
-        let black_gap = if self.need_black_gap { 
-            key_gap
-        }
-        else {
-            0
-        };
+        let key_gap = ((self.width as u32 * key_gap_10um + keyboard_width_10um / 2)
+            / keyboard_width_10um) as u16;
+        let black_gap = if self.need_black_gap { key_gap } else { 0 };
 
-        let max_pure_white_key_width = self.width - key_gap * (nr_of_white_keys+1) as u16;
+        let max_pure_white_key_width = self.width - key_gap * (nr_of_white_keys + 1) as u16;
 
         let white_key_wide_width = max_pure_white_key_width / nr_of_white_keys;
 
-        let black_key_height = ((white_key_wide_width as u64 
-                                    * self.black_key_height_10um as u64 * 1024
-                                + self.white_key_wide_width_10um as u64/2)
-                                / self.white_key_wide_width_10um as u64
-                                / self.dot_ratio_1024 as u64) as u16;
+        let black_key_height =
+            ((white_key_wide_width as u64 * self.black_key_height_10um as u64 * 1024
+                + self.white_key_wide_width_10um as u64 / 2)
+                / self.white_key_wide_width_10um as u64
+                / self.dot_ratio_1024 as u64) as u16;
         let white_key_wide_height = ((white_key_wide_width as u64
-                                        * self.white_key_wide_height_10um as u64
-                                + self.white_key_wide_width_10um as u64/2)
-                                / self.white_key_wide_width_10um as u64) as u16;
+            * self.white_key_wide_height_10um as u64
+            + self.white_key_wide_width_10um as u64 / 2)
+            / self.white_key_wide_width_10um as u64) as u16;
 
-        let height = 2*key_gap + black_gap + black_key_height + white_key_wide_height;
+        let height = 2 * key_gap + black_gap + black_key_height + white_key_wide_height;
 
         let mut elements = vec![];
 
         let mut white_x = 0;
-        let n = base_elements.len()-1;
-        for (i,el) in base_elements.into_iter().enumerate() {
+        let n = base_elements.len() - 1;
+        for (i, el) in base_elements.into_iter().enumerate() {
             match el {
-                base::ResultElement::Key(width,_key) => {
+                base::ResultElement::Key(width, _key) => {
                     let wide_rect = Rectangle {
                         x: white_x,
                         y: black_gap + black_key_height + key_gap,
@@ -282,22 +301,21 @@ impl KeyboardBuilder {
                     };
                     let tr = top.get_top_for(&el);
                     match tr {
-                        TopResultElement::WhiteGapBlack(w,_g,_blk) => {
+                        TopResultElement::WhiteGapBlack(w, _g, _blk) => {
                             let small_rect = Rectangle {
                                 x: white_x,
                                 y: key_gap,
                                 width: w,
                                 height: black_gap + black_key_height,
                             };
-                            let opt_blind = if i == n-1 {
+                            let opt_blind = if i == n - 1 {
                                 Some(Rectangle {
-                                    x: white_x+w,
+                                    x: white_x + w,
                                     y: key_gap,
-                                    width: width-w,
+                                    width: width - w,
                                     height: black_gap + black_key_height,
                                 })
-                            }
-                            else {
+                            } else {
                                 None
                             };
                             elements.push(Element::WhiteKey {
@@ -305,8 +323,8 @@ impl KeyboardBuilder {
                                 small: small_rect,
                                 blind: opt_blind,
                             });
-                        },
-                        TopResultElement::BlindWhiteGapBlack(blind,w,g,_blk) => {
+                        }
+                        TopResultElement::BlindWhiteGapBlack(blind, w, g, _blk) => {
                             let opt_blind = if i == 1 {
                                 Some(Rectangle {
                                     x: white_x,
@@ -314,20 +332,18 @@ impl KeyboardBuilder {
                                     width: blind,
                                     height: black_gap + black_key_height,
                                 })
-                            }
-                            else if i == n-1 {
+                            } else if i == n - 1 {
                                 Some(Rectangle {
                                     x: white_x + w + g,
                                     y: key_gap,
                                     width: width - w - g,
                                     height: black_gap + black_key_height,
                                 })
-                            }
-                            else {
+                            } else {
                                 None
                             };
                             let small_rect = Rectangle {
-                                x: white_x+blind,
+                                x: white_x + blind,
                                 y: key_gap,
                                 width: w,
                                 height: black_gap + black_key_height,
@@ -337,8 +353,8 @@ impl KeyboardBuilder {
                                 small: small_rect,
                                 blind: opt_blind,
                             });
-                        },
-                        TopResultElement::BlindWhite(g,w) => {
+                        }
+                        TopResultElement::BlindWhite(g, w) => {
                             let opt_blind = if i == 1 {
                                 Some(Rectangle {
                                     x: white_x,
@@ -346,12 +362,11 @@ impl KeyboardBuilder {
                                     width: g,
                                     height: black_gap + black_key_height,
                                 })
-                            }
-                            else {
+                            } else {
                                 None
                             };
                             let small_rect = Rectangle {
-                                x: white_x+g,
+                                x: white_x + g,
                                 y: key_gap,
                                 width: w,
                                 height: black_gap + black_key_height,
@@ -361,11 +376,11 @@ impl KeyboardBuilder {
                                 small: small_rect,
                                 blind: opt_blind,
                             });
-                        },
+                        }
                     };
                     if i < n - 1 {
                         match tr {
-                            TopResultElement::WhiteGapBlack(w,g,blk) => {
+                            TopResultElement::WhiteGapBlack(w, g, blk) => {
                                 let rect = Rectangle {
                                     x: white_x + w + g,
                                     y: key_gap,
@@ -373,8 +388,8 @@ impl KeyboardBuilder {
                                     height: black_key_height,
                                 };
                                 elements.push(Element::BlackKey(rect));
-                            },
-                            TopResultElement::BlindWhiteGapBlack(blind,w,g,blk) => {
+                            }
+                            TopResultElement::BlindWhiteGapBlack(blind, w, g, blk) => {
                                 let rect = Rectangle {
                                     x: white_x + blind + w + g,
                                     y: key_gap,
@@ -382,8 +397,8 @@ impl KeyboardBuilder {
                                     height: black_key_height,
                                 };
                                 elements.push(Element::BlackKey(rect));
-                            },
-                            TopResultElement::BlindWhite(_g,_w) => ()
+                            }
+                            TopResultElement::BlindWhite(_g, _w) => (),
                         }
                     };
                     white_x += width;
@@ -391,7 +406,7 @@ impl KeyboardBuilder {
                 base::ResultElement::Gap(gap) => {
                     white_x += gap;
                 }
-            } 
+            }
         }
 
         //println!("{:#?}", elements);
@@ -402,7 +417,7 @@ impl KeyboardBuilder {
             width: self.width,
             height,
             perfect: base.is_perfect() && top.is_perfect(),
-            elements
+            elements,
         }
     }
 }
@@ -411,20 +426,39 @@ mod tests {
     use crate::KeyboardBuilder;
 
     #[test]
+    fn test_standard_pianos() -> Result<(), String> {
+        let _keyboard = KeyboardBuilder::new()
+            .standard_piano(88)?
+            .standard_piano(76)?
+            .standard_piano(73)?
+            .standard_piano(64)?
+            .standard_piano(61)?
+            .standard_piano(49)?
+            .standard_piano(37)?
+            .standard_piano(25)?
+            .set_width(800)
+            .unwrap()
+            .build2d();
+        Ok(())
+    }
+    #[test]
     fn test_max_width() {
         let _keyboard = KeyboardBuilder::new()
-                        .set_most_left_right_white_keys(0,127).unwrap()
-                        .set_width(65535-127).unwrap()
-                        .build2d();
+            .set_most_left_right_white_keys(0, 127)
+            .unwrap()
+            .set_width(65535 - 127)
+            .unwrap()
+            .build2d();
     }
     #[test]
     fn test_several_widths() {
-        for width in 65000..65535-127 {
+        for width in 65000..65535 - 127 {
             let _keyboard = KeyboardBuilder::new()
-                            .set_most_left_right_white_keys(0,127).unwrap()
-                            .set_width(width).unwrap()
-                            .build2d();
+                .set_most_left_right_white_keys(0, 127)
+                .unwrap()
+                .set_width(width)
+                .unwrap()
+                .build2d();
         }
     }
 }
-
