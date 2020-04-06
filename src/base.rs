@@ -321,7 +321,7 @@ impl Base {
                     match self.elements[i] {
                         Element::KeyCDE(key) | Element::IdenticalWhite(key) => {
                             if key % 12 != KEY_C {
-                                println!("{}", key);
+                                //println!("{}", key);
                                 continue;
                             }
                         }
