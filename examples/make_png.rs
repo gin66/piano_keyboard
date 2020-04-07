@@ -5,7 +5,7 @@ use std::io::BufWriter;
 use std::path::Path;
 
 use clap::value_t;
-use clap::{crate_authors, crate_version};
+use clap::crate_version;
 use clap::{App, Arg};
 use png;
 use png::HasParameters;
@@ -15,7 +15,6 @@ use crate::piano_keyboard::KeyboardBuilder;
 pub fn usage() -> clap::ArgMatches<'static> {
     App::new("piano_keyboard demo")
         .version(crate_version!())
-        .author(crate_authors!("\n"))
         .about("Example for piano_keyboard")
         .arg(
             Arg::with_name("width")
@@ -62,7 +61,7 @@ pub fn usage() -> clap::ArgMatches<'static> {
         .get_matches()
 }
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = usage();
 
     let width = value_t!(matches, "width", u32).unwrap_or_else(|e| e.exit());
