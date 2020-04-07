@@ -7,7 +7,7 @@
 //!
 //! Reference for the dimension is this internet image:
 //! ![octave drawing](http://www.rwgiangiulio.com/construction/manual/layout.jpg)
-//! 
+//!
 //! The dimensions described have been used to create the elements of
 //! a piano keyboard like for an octave like this:
 //! ![img](file:../../../keyboard.png)
@@ -171,10 +171,14 @@ impl KeyboardBuilder {
     fn check_width(self) -> Result<KeyboardBuilder, String> {
         let nr_of_keys = (self.right_white_key - self.left_white_key) as u16;
         if self.width > 65535 - 127 {
-            Err(format!("Keyboard width {} too big",self.width))
-        }
-        else if self.width < nr_of_keys * 3 {
-            Err(format!("Keyboard width too small {} < {} for {} keys", self.width, nr_of_keys * 3, nr_of_keys))
+            Err(format!("Keyboard width {} too big", self.width))
+        } else if self.width < nr_of_keys * 3 {
+            Err(format!(
+                "Keyboard width too small {} < {} for {} keys",
+                self.width,
+                nr_of_keys * 3,
+                nr_of_keys
+            ))
         } else {
             Ok(self)
         }
@@ -468,12 +472,13 @@ mod tests {
         }
     }
 
-    // Run this test with 
+    // Run this test with
     //      cargo test -- --ignored
-    #[test] #[ignore]
+    #[test]
+    #[ignore]
     fn test_all_pianos() -> Result<(), String> {
-        for keys in vec![25,37,49,61,64,73,76,88].into_iter() {
-            for width in 3*keys as u16..65535-127 {
+        for keys in vec![25, 37, 49, 61, 64, 73, 76, 88].into_iter() {
+            for width in 3 * keys as u16..65535 - 127 {
                 let _keyboard = KeyboardBuilder::new()
                     .standard_piano(keys)?
                     .set_width(width)

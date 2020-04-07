@@ -4,8 +4,8 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
 
-use clap::value_t;
 use clap::crate_version;
+use clap::value_t;
 use clap::{App, Arg};
 use png;
 use png::HasParameters;
