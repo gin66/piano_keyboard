@@ -246,7 +246,6 @@ impl KeyboardBuilder {
     /// Final build the keyboard, which means to perform all calculations and
     /// create all the elements.
     ///
-    /// TODO: Create a fallback solution (cargo run --example make_png -- --width 810).
     pub fn build2d(self) -> Keyboard2d {
         let base = Base::calculate(&self);
         let top = Top::calculate(&self, &base);
@@ -460,5 +459,21 @@ mod tests {
                 .unwrap()
                 .build2d();
         }
+    }
+
+    // Run this test with 
+    //      cargo test -- --ignored
+    #[test] #[ignore]
+    fn test_all_pianos() -> Result<(), String> {
+        for keys in vec![25,37,49,61,64,73,76,88].into_iter() {
+            for width in 3*keys as u16..65535-127 {
+                let _keyboard = KeyboardBuilder::new()
+                    .standard_piano(keys)?
+                    .set_width(width)
+                    .unwrap()
+                    .build2d();
+            }
+        }
+        Ok(())
     }
 }

@@ -32,3 +32,8 @@ The gap between white and black keys can be removed by an option of the Keyboard
 The interface is prepared to be compatible for an extension towards a 3d keyboard.
 That's why the returned keyboard is called Keyboard2D and the related build function
 is called build2d().
+
+## Thanks for contribution
+
+* [PolyMeilex](https://github.com/PolyMeilex) for his patch
+
