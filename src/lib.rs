@@ -227,6 +227,9 @@ impl KeyboardBuilder {
     pub fn set_width(mut self, width: u16) -> Result<KeyboardBuilder, String> {
         if width > 65535 - 127 {
             Err("Requested width too big".to_string())
+        }
+        else if width < self.nr_of_keys * 3 {
+            Err(format!("Requested width too small {} < {}", width, self.nr_of_keys * 3))
         } else {
             self.width = width;
             Ok(self)
