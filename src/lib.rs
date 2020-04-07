@@ -168,6 +168,17 @@ impl KeyboardBuilder {
             white_key_wide_height_10um: 45_00,
         }
     }
+    fn check_width(self) -> Result<KeyboardBuilder, String> {
+        let nr_of_keys = (self.right_white_key - self.left_white_key) as u16;
+        if self.width > 65535 - 127 {
+            Err(format!("Keyboard width {} too big",self.width))
+        }
+        else if self.width < nr_of_keys * 3 {
+            Err(format!("Keyboard width too small {} < {} for {} keys", self.width, nr_of_keys * 3, nr_of_keys))
+        } else {
+            Ok(self)
+        }
+    }
     /// Define a standard piano with 25/37/49/61/64/73/76 or 88 keys.
     pub fn standard_piano(mut self, nr_of_keys: u8) -> Result<KeyboardBuilder, String> {
         let (left, right) = match nr_of_keys {
@@ -189,7 +200,7 @@ impl KeyboardBuilder {
         assert_eq!(right - left + 1, nr_of_keys);
         self.left_white_key = left;
         self.right_white_key = right;
-        Ok(self)
+        self.check_width()
     }
     pub fn is_rd64(mut self) -> KeyboardBuilder {
         // RD-64 is A1 to C7
@@ -220,20 +231,13 @@ impl KeyboardBuilder {
         } else {
             self.left_white_key = left_white_key;
             self.right_white_key = right_white_key;
-            Ok(self)
+            self.check_width()
         }
     }
     /// Sets the desired keyboard width in pixels.
     pub fn set_width(mut self, width: u16) -> Result<KeyboardBuilder, String> {
-        if width > 65535 - 127 {
-            Err("Requested width too big".to_string())
-        }
-        else if width < self.nr_of_keys * 3 {
-            Err(format!("Requested width too small {} < {}", width, self.nr_of_keys * 3))
-        } else {
-            self.width = width;
-            Ok(self)
-        }
+        self.width = width;
+        self.check_width()
     }
     pub fn white_black_gap_present(mut self, gap_present: bool) -> KeyboardBuilder {
         self.need_black_gap = gap_present;
